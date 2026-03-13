@@ -5,6 +5,8 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include <math.h>
+
 #include "editor/ecs/componentPool.h"
 #include "editor/ecs/gameObject.h"
 
@@ -37,6 +39,44 @@ int main(int argc, char** argv){
             &gameObject
         );
     }
+
+
+
+    // --------- GLFW init ---------
+    glfwInit();
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    GLFWwindow* window = glfwCreateWindow(1280, 720, "CherryEngine", NULL, NULL);
+    if (window == NULL)
+    {
+        LOG("Failed to create GLFW window");
+        glfwTerminate();
+        return false;
+    }
+    glfwMakeContextCurrent(window);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetWindowUserPointer(window, NULL);
+    // --------- GLAD init ---------
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    {
+        LOG("Erreur de Init Glad");
+        return false;
+    }
+    glEnable(GL_DEPTH_TEST);
+
+    while (!glfwWindowShouldClose(window)) {
+        glClearColor(sin(glfwGetTime()), cos(glfwGetTime()), -cos(glfwGetTime()), 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        // Ici on fait ce qu'on veut
+
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
+
+    // Ici on clean tout
+    glfwDestroyWindow(window);
 
     return EXIT_SUCCESS;
 }
