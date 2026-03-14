@@ -6,41 +6,40 @@
 #include <GLFW/glfw3.h>
 
 #include <math.h>
+#include <string.h>
+#include <cglm/struct.h>
 
+#include "cglm/cam.h"
 #include "editor/ecs/componentPool.h"
 #include "editor/ecs/gameObject.h"
+#include "render/camera.h"
+
+void processInput(Camera* camera, float deltaTime, GLFWwindow *window)
+{
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, true);
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        Camera_processKeyboard(camera, FORWARD, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        Camera_processKeyboard(camera, BACKWARD, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        Camera_processKeyboard(camera, LEFT, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        Camera_processKeyboard(camera, RIGHT, deltaTime);
+}
 
 int main(int argc, char** argv){
-    ComponentPool componentPool = ComponentPool_Create();
+    // Creation d'une camera
+    Camera camera = Camera_createCamera(glms_vec3_zero(),(vec3s)VECTOR_UP,(vec3s)VECTOR_FRONT,CAMERA_YAW, CAMERA_PITCH,CAMERA_SPEED,CAMERA_SENSIVITY,CAMERA_ZOOM);
 
-    GameObject gameObject = GameObject_Create();
-    if(!GameObject_AddComponent(&gameObject, &componentPool, COMPONENT_TRANSFORM)){
-        LOG("erreur de AddComponent");
-    }
-    if(!GameObject_AddComponent(&gameObject, &componentPool, COMPONENT_SPRITE_RENDERER)){
-        LOG("erreur de AddComponent");
-    }
-    Transform* transform = GameObject_GetComponent(&gameObject, &componentPool, COMPONENT_TRANSFORM);
-    transform->position.x = 100;
-    Transform_Afficher(*transform);
+    // Chargement du resource path du projet
+    //char* path = RESOURCES_PATH;
+    //strcat(path,"/");
 
-    SpriteRenderer* spriteRenderer = GameObject_GetComponent(&gameObject, &componentPool, COMPONENT_SPRITE_RENDERER);
-    spriteRenderer->imagePath = "bonjour monde";
-
-    SpriteRenderer* s = GameObject_GetComponent(&gameObject, &componentPool, COMPONENT_SPRITE_RENDERER);
-    LOG(s->imagePath);
-    isValid(s);
-
-    for(int i = 0; i < gameObject.componentCount; i++){
-        ComponentPool_UpdateComponent(
-            &componentPool,
-            gameObject.components[i].component_type,
-            GameObject_GetComponent(&gameObject, &componentPool, gameObject.components[i].component_type),
-            &gameObject
-        );
-    }
-
-
+    // Typiquement dans ton main.c ou ta classe Camera
+    float aspect = 800.0f / 600.0f; // Largeur / Hauteur
+    float fov = glm_rad(45.0f);     // Champ de vision de 45 degrés converti en radians
+    mat4s perspective = glms_perspective(fov, aspect, 0.1f, 100.0f);
 
     // --------- GLFW init ---------
     glfwInit();
@@ -65,11 +64,21 @@ int main(int argc, char** argv){
     }
     glEnable(GL_DEPTH_TEST);
 
+    float deltaTime = 0.0f;
+    float lastFrame = 0.0f;
+    float currentFrame = 0.0f;
+
     while (!glfwWindowShouldClose(window)) {
         glClearColor(sin(glfwGetTime()), cos(glfwGetTime()), -cos(glfwGetTime()), 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        currentFrame = (float)glfwGetTime();
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
+
         // Ici on fait ce qu'on veut
+        processInput(&camera, deltaTime, window);
+        printf("(%f, %f, %f)\n",camera.position.x,camera.position.y,camera.position.z);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
