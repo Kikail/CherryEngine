@@ -21,7 +21,7 @@ typedef enum ComponentType_t ComponentType;
 
 // Creation du stock de components
 // Ici nous stockons tout les composants de la scene
-#define MAX_COMPONENTS 100
+#define MAX_COMPONENTS 1000
 typedef struct ComponentPool_t {
     Transform transforms[MAX_COMPONENTS]; uint32 currentTransformCount;
     MeshRenderer meshRenderers[MAX_COMPONENTS]; uint32 currentMeshRendererCount;

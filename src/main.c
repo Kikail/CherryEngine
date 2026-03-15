@@ -13,6 +13,7 @@
 #include "editor/ecs/componentPool.h"
 #include "editor/ecs/gameObject.h"
 #include "render/camera.h"
+#include "render/shader.h"
 
 void processInput(Camera* camera, float deltaTime, GLFWwindow *window)
 {
@@ -29,6 +30,8 @@ void processInput(Camera* camera, float deltaTime, GLFWwindow *window)
 }
 
 int main(int argc, char** argv){
+    ComponentPool component_pool = ComponentPool_Create();
+
     // Creation d'une camera
     Camera camera = Camera_createCamera(glms_vec3_zero(),(vec3s)VECTOR_UP,(vec3s)VECTOR_FRONT,CAMERA_YAW, CAMERA_PITCH,CAMERA_SPEED,CAMERA_SENSIVITY,CAMERA_ZOOM);
 
@@ -68,6 +71,12 @@ int main(int argc, char** argv){
     float lastFrame = 0.0f;
     float currentFrame = 0.0f;
 
+    long int taille = sizeof(Transform)*MAX_COMPONENTS + sizeof(SpriteRenderer)*MAX_COMPONENTS + sizeof(MeshRenderer)*MAX_COMPONENTS + sizeof(PlayerController)*MAX_COMPONENTS;
+    printf("on alloue : %ld octets\n",taille);
+
+    Shader shader;
+    Shader_load("/home/killian/Projects/C/CherryEngine/resources/shaders/test.vs", "/home/killian/Projects/C/CherryEngine/resources/shaders/test.fs");
+
     while (!glfwWindowShouldClose(window)) {
         glClearColor(sin(glfwGetTime()), cos(glfwGetTime()), -cos(glfwGetTime()), 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -78,7 +87,6 @@ int main(int argc, char** argv){
 
         // Ici on fait ce qu'on veut
         processInput(&camera, deltaTime, window);
-        printf("(%f, %f, %f)\n",camera.position.x,camera.position.y,camera.position.z);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
