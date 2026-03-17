@@ -10,6 +10,7 @@
 #include <cglm/struct.h>
 
 #include "cglm/cam.h"
+#include "editor/core/shapes/shape.h"
 #include "editor/ecs/componentPool.h"
 #include "editor/ecs/gameObject.h"
 #include "render/camera.h"
@@ -29,18 +30,39 @@ void processInput(Camera* camera, float deltaTime, GLFWwindow *window)
         Camera_processKeyboard(camera, RIGHT, deltaTime);
 }
 
+static bool firstMouse = true;
+static Camera camera;
+static float lastX, lastY;
+
+void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
+{
+    float xpos = (float)(xposIn);
+    float ypos = (float)(yposIn);
+    if (firstMouse) { lastX = xpos; lastY = ypos; firstMouse = false; }
+
+    float xoffset = xpos - lastX;
+    float yoffset = lastY - ypos;
+    lastX = xpos;
+    lastY = ypos;
+
+    Camera_processMouseMovement(&camera, xoffset, yoffset);
+}
+
+#define WIDTH 1280.0f
+#define HEIGHT 720.0f
+
 int main(int argc, char** argv){
     ComponentPool component_pool = ComponentPool_Create();
 
     // Creation d'une camera
-    Camera camera = Camera_createCamera(glms_vec3_zero(),(vec3s)VECTOR_UP,(vec3s)VECTOR_FRONT,CAMERA_YAW, CAMERA_PITCH,CAMERA_SPEED,CAMERA_SENSIVITY,CAMERA_ZOOM);
+    camera = Camera_createCamera(glms_vec3_zero(),(vec3s)VECTOR_UP,(vec3s)VECTOR_FRONT,CAMERA_YAW, CAMERA_PITCH,CAMERA_SPEED,CAMERA_SENSIVITY,CAMERA_ZOOM);
 
     // Chargement du resource path du projet
     //char* path = RESOURCES_PATH;
     //strcat(path,"/");
 
     // Typiquement dans ton main.c ou ta classe Camera
-    float aspect = 800.0f / 600.0f; // Largeur / Hauteur
+    float aspect = WIDTH / HEIGHT; // Largeur / Hauteur
     float fov = glm_rad(45.0f);     // Champ de vision de 45 degrés converti en radians
     mat4s perspective = glms_perspective(fov, aspect, 0.1f, 100.0f);
 
@@ -49,7 +71,7 @@ int main(int argc, char** argv){
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    GLFWwindow* window = glfwCreateWindow(1280, 720, "CherryEngine", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "CherryEngine", NULL, NULL);
     if (window == NULL)
     {
         LOG("Failed to create GLFW window");
@@ -59,6 +81,7 @@ int main(int argc, char** argv){
     glfwMakeContextCurrent(window);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetWindowUserPointer(window, NULL);
+    glfwSetCursorPosCallback(window, mouse_callback);
     // --------- GLAD init ---------
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
@@ -71,14 +94,15 @@ int main(int argc, char** argv){
     float lastFrame = 0.0f;
     float currentFrame = 0.0f;
 
-    long int taille = sizeof(Transform)*MAX_COMPONENTS + sizeof(SpriteRenderer)*MAX_COMPONENTS + sizeof(MeshRenderer)*MAX_COMPONENTS + sizeof(PlayerController)*MAX_COMPONENTS;
-    printf("on alloue : %ld octets\n",taille);
+    Shape cube = Shape_create(CUBE);
 
     Shader shader;
-    Shader_load("/home/killian/Projects/C/CherryEngine/resources/shaders/test.vs", "/home/killian/Projects/C/CherryEngine/resources/shaders/test.fs");
+    if (!Shader_load(&shader, "/home/killian/Projects/C/CherryEngine/resources/shaders/test.vs", "/home/killian/Projects/C/CherryEngine/resources/shaders/test.fs")) {
+        LOG("Erreur de chargement des shaders");
+    }
 
     while (!glfwWindowShouldClose(window)) {
-        glClearColor(sin(glfwGetTime()), cos(glfwGetTime()), -cos(glfwGetTime()), 1.0f);
+        glClearColor(0.6f,0.6f,0.6f,0.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         currentFrame = (float)glfwGetTime();
@@ -87,6 +111,14 @@ int main(int argc, char** argv){
 
         // Ici on fait ce qu'on veut
         processInput(&camera, deltaTime, window);
+
+        mat4s view = Camera_getViewMatrix(&camera);
+        mat4s model = glms_mat4_identity();
+        Shader_use(&shader);
+        Shader_setMat4(&shader, "model", model);
+        Shader_setMat4(&shader, "view", view);
+        Shader_setMat4(&shader, "projection", perspective);
+        Shape_draw(&cube);
 
         glfwSwapBuffers(window);
         glfwPollEvents();

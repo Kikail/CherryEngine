@@ -14,7 +14,7 @@ typedef struct Shader_t {
     char fragmentPath[128];
 }Shader;
 
-Shader Shader_load(char* vs, char* fs);
+bool Shader_load(Shader* shader, char* vs, char* fs);
 void Shader_use(Shader* shader);
 void Shader_clean(Shader* shader);
 

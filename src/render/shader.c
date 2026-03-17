@@ -27,13 +27,12 @@ char* loadAndFillBuffer(char* path) {
     return buffer;
 }
 
-Shader Shader_load(char* vs, char* fs) {
+bool Shader_load(Shader* shader, char* vs, char* fs) {
     char* vShaderCode = loadAndFillBuffer(vs);
     char* fShaderCode = loadAndFillBuffer(fs);
     if (vShaderCode != NULL && fShaderCode != NULL) {
-        Shader shader;
-        strcpy(shader.vertexPath, vs);
-        strcpy(shader.fragmentPath, fs);
+        strcpy(shader->vertexPath, vs);
+        strcpy(shader->fragmentPath, fs);
 
         unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
         glShaderSource(vertexShader, 1, &vShaderCode, NULL);
@@ -60,21 +59,23 @@ Shader Shader_load(char* vs, char* fs) {
         }
 
         // link shaders
-        shader.shaderID = glCreateProgram();
-        glAttachShader(shader.shaderID, vertexShader);
-        glAttachShader(shader.shaderID, fragmentShader);
-        glLinkProgram(shader.shaderID);
+        shader->shaderID = glCreateProgram();
+        glAttachShader(shader->shaderID, vertexShader);
+        glAttachShader(shader->shaderID, fragmentShader);
+        glLinkProgram(shader->shaderID);
         // check for linking errors
-        glGetProgramiv(shader.shaderID, GL_LINK_STATUS, &success);
+        glGetProgramiv(shader->shaderID, GL_LINK_STATUS, &success);
         if (!success) {
-            glGetProgramInfoLog(shader.shaderID, 512, NULL, infoLog);
+            glGetProgramInfoLog(shader->shaderID, 512, NULL, infoLog);
             printf("ERROR::SHADER::PROGRAM::LINKING_FAILED : %s\n", infoLog);
         }
         glDeleteShader(vertexShader);
         glDeleteShader(fragmentShader);
+        return true;
     }
     else {
         printf("Unable to load shaders\n");
+        return false;
     }
 }
 void Shader_use(Shader* shader){
