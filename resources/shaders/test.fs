@@ -4,7 +4,12 @@ out vec4 FragColor;
 in vec2 TexCoords;
 in vec3 iNormal;
 
+uniform vec3 lightDirection;
+
 void main()
 {
-    FragColor = vec4(abs(iNormal), 1.0);
+    float lightIntensity = dot(normalize(iNormal), normalize(lightDirection));
+    vec3 intensity = iNormal * lightIntensity;
+    vec3 ambient = 0.2 * iNormal;
+    FragColor = vec4( ambient + intensity, 1.0);
 }

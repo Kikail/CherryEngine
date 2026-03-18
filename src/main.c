@@ -7,14 +7,18 @@
 
 #include <math.h>
 #include <string.h>
+#include <time.h>
 #include <cglm/struct.h>
 
 #include "cglm/cam.h"
 #include "editor/core/shapes/shape.h"
 #include "editor/ecs/componentPool.h"
 #include "editor/ecs/gameObject.h"
+#include "physics/physicsWorld.h"
 #include "render/camera.h"
 #include "render/shader.h"
+
+static PhysicsWorld physics_world;
 
 void processInput(Camera* camera, float deltaTime, GLFWwindow *window)
 {
@@ -28,6 +32,8 @@ void processInput(Camera* camera, float deltaTime, GLFWwindow *window)
         Camera_processKeyboard(camera, LEFT, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         Camera_processKeyboard(camera, RIGHT, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+        PhysicsWorld_addObject(&physics_world);
 }
 
 static bool firstMouse = true;
@@ -52,6 +58,8 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
 #define HEIGHT 720.0f
 
 int main(int argc, char** argv){
+    srand(time(NULL));
+
     ComponentPool component_pool = ComponentPool_Create();
 
     // Creation d'une camera
@@ -96,23 +104,15 @@ int main(int argc, char** argv){
 
     Shape cube = Shape_create(CUBE);
 
+    physics_world = PhysicsWorld_create();
+
     Shader shader;
     if (!Shader_load(&shader, "/home/killian/Projects/C/CherryEngine/resources/shaders/test.vs", "/home/killian/Projects/C/CherryEngine/resources/shaders/test.fs")) {
         LOG("Erreur de chargement des shaders");
     }
 
-    GameObject gameObject = GameObject_Create();
-    GameObject_AddComponent(&gameObject, &component_pool, COMPONENT_TRANSFORM);
-    Transform* transform = GameObject_GetComponent(&gameObject, &component_pool, COMPONENT_TRANSFORM);
-    Transform_setScale(transform, (vec3s){ 1.0f, 1.0f, 1.0f });
-    Transform_setPosition(transform, (vec3s){ 0.0f, 0.0f, -5.0f });
+    vec3s lightDirection = {0.403945,0.868481,0.287348};
 
-    GameObject gameObject2 = GameObject_Create();
-    GameObject_AddComponent(&gameObject2, &component_pool, COMPONENT_TRANSFORM);
-    Transform* transform2 = GameObject_GetComponent(&gameObject2, &component_pool, COMPONENT_TRANSFORM);
-    Transform_setParent(transform2, transform, KEEP_SCALE);
-    Transform_setScale(transform2, (vec3s){ 1.0f, 1.0f, 1.0f });
-    Transform_setPosition(transform2, (vec3s){ 0.0f, -2.0f, 0.0f });
 
     while (!glfwWindowShouldClose(window)) {
         glClearColor(0.6f,0.6f,0.6f,0.0f);
@@ -122,31 +122,25 @@ int main(int argc, char** argv){
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
+        // Update de la physique
+        PhysicsWorld_step(&physics_world, deltaTime);
+
         // Ici on fait ce qu'on veut
         processInput(&camera, deltaTime, window);
 
-        Transform_setPosition(transform, (vec3s){ 0.0f, sin(currentFrame), -5.0f });
-        // Faire pivoter de 90 degrés sur l'axe Y
-        float angle = glm_rad(1.0);
-        versors rotation = glms_quat(angle, 0.5, 0.0, 1.0);
-        // Appliquer la rotation
-        Transform_rotate(transform, rotation, true);
-
+        // Commun pour tout les models
         mat4s view = Camera_getViewMatrix(&camera);
-        mat4s model = Transform_getWorldMatrix(transform);
         Shader_use(&shader);
-        Shader_setMat4(&shader, "model", model);
+        Shader_setVec3(&shader, "lightDirection", lightDirection);
         Shader_setMat4(&shader, "view", view);
         Shader_setMat4(&shader, "projection", perspective);
-        Shape_draw(&cube);
 
-        model = Transform_getWorldMatrix(transform2);
-        Shader_use(&shader);
-        Shader_setMat4(&shader, "model", model);
-        Shader_setMat4(&shader, "view", view);
-        Shader_setMat4(&shader, "projection", perspective);
-        Shape_draw(&cube);
-
+        // Affichage du model cible
+        for (int i = 0; i < physics_world.numPhysicsObjects; i++) {
+            mat4s tMatrix = glms_translate(glms_mat4_identity(), physics_world.physicsObjects[i].Position);
+            Shader_setMat4(&shader, "model", tMatrix);
+            Shape_draw(&cube);
+        }
 
         glfwSwapBuffers(window);
         glfwPollEvents();
