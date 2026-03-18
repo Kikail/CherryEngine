@@ -104,7 +104,7 @@ void ComponentPool_UpdateComponent(ComponentPool* componentPool, ComponentType c
     switch (componentType)
     {
         case COMPONENT_TRANSFORM:
-            Component_Transform_Update(component, gameObject);
+            // Pas de Update pour Transform
             break;
         case COMPONENT_PLAYER_CONTROLLER:
             Component_PlayerController_Update(component, gameObject);

@@ -101,6 +101,19 @@ int main(int argc, char** argv){
         LOG("Erreur de chargement des shaders");
     }
 
+    GameObject gameObject = GameObject_Create();
+    GameObject_AddComponent(&gameObject, &component_pool, COMPONENT_TRANSFORM);
+    Transform* transform = GameObject_GetComponent(&gameObject, &component_pool, COMPONENT_TRANSFORM);
+    Transform_setScale(transform, (vec3s){ 1.0f, 1.0f, 1.0f });
+    Transform_setPosition(transform, (vec3s){ 0.0f, 0.0f, -5.0f });
+
+    GameObject gameObject2 = GameObject_Create();
+    GameObject_AddComponent(&gameObject2, &component_pool, COMPONENT_TRANSFORM);
+    Transform* transform2 = GameObject_GetComponent(&gameObject2, &component_pool, COMPONENT_TRANSFORM);
+    Transform_setParent(transform2, transform, KEEP_SCALE);
+    Transform_setScale(transform2, (vec3s){ 1.0f, 1.0f, 1.0f });
+    Transform_setPosition(transform2, (vec3s){ 0.0f, -2.0f, 0.0f });
+
     while (!glfwWindowShouldClose(window)) {
         glClearColor(0.6f,0.6f,0.6f,0.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -112,13 +125,28 @@ int main(int argc, char** argv){
         // Ici on fait ce qu'on veut
         processInput(&camera, deltaTime, window);
 
+        Transform_setPosition(transform, (vec3s){ 0.0f, sin(currentFrame), -5.0f });
+        // Faire pivoter de 90 degrés sur l'axe Y
+        float angle = glm_rad(1.0);
+        versors rotation = glms_quat(angle, 0.5, 0.0, 1.0);
+        // Appliquer la rotation
+        Transform_rotate(transform, rotation, true);
+
         mat4s view = Camera_getViewMatrix(&camera);
-        mat4s model = glms_mat4_identity();
+        mat4s model = Transform_getWorldMatrix(transform);
         Shader_use(&shader);
         Shader_setMat4(&shader, "model", model);
         Shader_setMat4(&shader, "view", view);
         Shader_setMat4(&shader, "projection", perspective);
         Shape_draw(&cube);
+
+        model = Transform_getWorldMatrix(transform2);
+        Shader_use(&shader);
+        Shader_setMat4(&shader, "model", model);
+        Shader_setMat4(&shader, "view", view);
+        Shader_setMat4(&shader, "projection", perspective);
+        Shape_draw(&cube);
+
 
         glfwSwapBuffers(window);
         glfwPollEvents();
