@@ -126,10 +126,10 @@ void Shape_generatePyramid(Shape* shape) {
 Shape Shape_create(ShapeType type) {
     Shape shape;
     switch (type) {
-        case CUBE:
+        case SHAPE_CUBE:
             Shape_generateCube(&shape);
             break;
-        case PYRAMID:
+        case SHAPE_PYRAMID:
             Shape_generatePyramid(&shape);
             break;
     }

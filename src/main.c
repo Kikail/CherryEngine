@@ -102,7 +102,7 @@ int main(int argc, char** argv){
     float lastFrame = 0.0f;
     float currentFrame = 0.0f;
 
-    Shape cube = Shape_create(CUBE);
+    Shape cube = Shape_create(SHAPE_CUBE);
 
     physics_world = PhysicsWorld_create();
 
@@ -113,7 +113,8 @@ int main(int argc, char** argv){
 
     vec3s lightDirection = {0.403945,0.868481,0.287348};
 
-
+    float timeCheck = 0.0;
+    int nbFrames = 0;
     while (!glfwWindowShouldClose(window)) {
         glClearColor(0.6f,0.6f,0.6f,0.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -121,6 +122,19 @@ int main(int argc, char** argv){
         currentFrame = (float)glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
+
+        if (timeCheck >= 1.0) {
+            char title[128];
+            // Calcul du temps moyen par frame (ms) et des FPS
+            double msPerFrame = 1000.0 / (double)nbFrames;
+            sprintf(title, "CherryEngine - [FPS: %d | %.2f ms]", nbFrames, msPerFrame);
+
+            // Mise à jour du titre de la fenêtre
+            glfwSetWindowTitle(window, title);
+
+            timeCheck = 0.0;
+            nbFrames = 0;
+        }
 
         // Update de la physique
         PhysicsWorld_step(&physics_world, deltaTime);
@@ -137,10 +151,17 @@ int main(int argc, char** argv){
 
         // Affichage du model cible
         for (int i = 0; i < physics_world.numPhysicsObjects; i++) {
-            mat4s tMatrix = glms_translate(glms_mat4_identity(), physics_world.physicsObjects[i].Position);
+            mat4s tMatrix = glms_translate(glms_mat4_identity(), physics_world.physicsObjects[i].Transform.position);
+            if (physics_world.physicsObjects[i].Collider->type == CUBE) {
+                BoxCollider* col = physics_world.physicsObjects[i].Collider->collider;
+                tMatrix = glms_scale(tMatrix, glms_vec3_scale(col->HalfSize,2.0));
+            }
             Shader_setMat4(&shader, "model", tMatrix);
             Shape_draw(&cube);
         }
+
+        timeCheck += deltaTime;
+        nbFrames++;
 
         glfwSwapBuffers(window);
         glfwPollEvents();

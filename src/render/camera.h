@@ -15,7 +15,7 @@
 
 #define CAMERA_YAW (-90.0)
 #define CAMERA_PITCH (0.0f)
-#define CAMERA_SPEED (3.0)
+#define CAMERA_SPEED (10.0)
 #define CAMERA_SENSIVITY (0.1f)
 #define CAMERA_ZOOM (45.0)
 

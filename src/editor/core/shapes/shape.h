@@ -6,8 +6,8 @@
 #define CHERRYENGINE_SHAPE_H
 
 typedef enum ShapeType_t {
-    CUBE,
-    PYRAMID
+    SHAPE_CUBE,
+    SHAPE_PYRAMID
 }ShapeType;
 
 typedef struct Shape_t {
