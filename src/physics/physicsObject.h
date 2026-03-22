@@ -10,6 +10,11 @@
 #include "colliders.h"
 #include "../editor/ecs/components/transform.h"
 
+typedef enum PhysicsTag_t {
+    ENVIRONMENT,
+    PLAYER
+}PhysicsTag;
+
 typedef enum PhysicsType_t {
     DYNAMIC,
     STATIC
@@ -24,6 +29,7 @@ typedef struct PhysicsObject_t {
     Transform Transform;
 
     PhysicsType PhysicsType;
+    PhysicsTag PhysicsTag;
 }PhysicsObject;
 
 

@@ -37,26 +37,6 @@ PhysicsWorld PhysicsWorld_create() {
     // 1. LE SOL (Centre : 0, -5, 0)
     addWall(&world, (vec3s){0.0f, -5.0f, 0.0f}, (vec3s){groundSize, 0.5f, groundSize});
 
-    // 2. MUR NORD (Z+)
-    addWall(&world,
-        (vec3s){0.0f, -5.0f + wallHeight, groundSize},
-        (vec3s){groundSize, wallHeight, wallThickness});
-
-    // 3. MUR SUD (Z-)
-    addWall(&world,
-        (vec3s){0.0f, -5.0f + wallHeight, -groundSize},
-        (vec3s){groundSize, wallHeight, wallThickness});
-
-    // 4. MUR EST (X+)
-    addWall(&world,
-        (vec3s){groundSize, -5.0f + wallHeight, 0.0f},
-        (vec3s){wallThickness, wallHeight, groundSize});
-
-    // 5. MUR OUEST (X-)
-    addWall(&world,
-        (vec3s){-groundSize, -5.0f + wallHeight, 0.0f},
-        (vec3s){wallThickness, wallHeight, groundSize});
-
     return world;
 }
 
@@ -150,6 +130,34 @@ void PhysicsWorld_step(PhysicsWorld *world, float deltaTime) {
         vec3s impulse = glms_vec3_scale(cp->Normal, j);
         a->Velocity = glms_vec3_sub(a->Velocity, glms_vec3_scale(impulse, invMassA));
         b->Velocity = glms_vec3_add(b->Velocity, glms_vec3_scale(impulse, invMassB));
+
+        // --- DANS TA BOUCLE DE COLLISION ---
+
+        // 1. Calculer la vitesse relative
+        vec3s rv = glms_vec3_sub(b->Velocity, a->Velocity);
+
+        // 2. Calculer la composante tangente (perpendiculaire à la normale)
+        vec3s tangent = glms_vec3_sub(rv, glms_vec3_scale(cp->Normal, glms_vec3_dot(rv, cp->Normal)));
+
+        if (glms_vec3_norm(tangent) > 0.001f) {
+            tangent = glms_vec3_normalize(tangent);
+        }
+
+        // 3. Calculer la magnitude de l'impulsion de friction (Coulomb's Law)
+        float jt = -glms_vec3_dot(rv, tangent);
+        jt /= totalInvMass;
+
+        // Friction simple (entre 0.0 et 1.0)
+        float mu = 5.0;
+
+        // On limite la friction par l'impulsion normale (j) pour ne pas freiner plus que l'impact
+        float frictionImpulseMagnitude = fmaxf(-j * mu, fminf(jt, j * mu));
+
+        vec3s frictionImpulse = glms_vec3_scale(tangent, frictionImpulseMagnitude);
+
+        // 4. Appliquer au joueur et aux objets
+        a->Velocity = glms_vec3_sub(a->Velocity, glms_vec3_scale(frictionImpulse, invMassA));
+        b->Velocity = glms_vec3_add(b->Velocity, glms_vec3_scale(frictionImpulse, invMassB));
     }
 }
 void PhysicsWorld_addCollision(PhysicsWorld* world, Collision* collision) {
@@ -179,6 +187,38 @@ void PhysicsWorld_resolveCollisions(PhysicsWorld *world, float deltaTime) {
                 collision.Points = collisionPoints;
                 PhysicsWorld_addCollision(world, &collision);
             }
+        }
+    }
+}
+
+void PhysicsWorld_impulse(PhysicsWorld *world, float deltaTime, vec3s position, float intensity, float attenuationRadius) {
+    for (int i = 0; i < world->numPhysicsObjects; i++) {
+        PhysicsObject* obj = &world->physicsObjects[i];
+
+        // On n'explose pas le sol ou les murs statiques
+        if (obj->PhysicsType == STATIC || obj->PhysicsTag == PLAYER) continue;
+
+        // 1. Calculer le vecteur direction (de l'explosion vers l'objet)
+        vec3s dir = glms_vec3_sub(obj->Transform.position, position);
+        float distance = glms_vec3_norm(dir);
+
+        // 2. Vérifier si l'objet est dans le rayon d'action
+        if (distance < attenuationRadius && distance > 0.0001f) {
+            // Normaliser le vecteur direction
+            dir = glms_vec3_normalize(dir);
+
+            // 3. Calculer l'atténuation (0.0 à 1.0)
+            // Plus on est loin, moins c'est fort
+            float strength = 1.0f - (distance / attenuationRadius);
+
+            // 4. Calculer la force finale
+            float forceMagnitude = intensity * strength;
+            vec3s impulse = glms_vec3_scale(dir, forceMagnitude);
+
+            // 5. Appliquer directement à la vitesse (Impulsion instantanée)
+            // On divise par la masse : F = ma -> a = F/m
+            vec3s velocityChange = glms_vec3_scale(impulse, 1.0f / obj->Mass);
+            obj->Velocity = glms_vec3_add(obj->Velocity, velocityChange);
         }
     }
 }

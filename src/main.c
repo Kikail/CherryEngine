@@ -20,10 +20,17 @@
 
 static PhysicsWorld physics_world;
 
+static bool firstMouse = true;
+static Camera camera;
+static float lastX, lastY;
+
+PhysicsObject* physicsObject;
+
 void processInput(Camera* camera, float deltaTime, GLFWwindow *window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
+    /*
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         Camera_processKeyboard(camera, FORWARD, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
@@ -32,13 +39,12 @@ void processInput(Camera* camera, float deltaTime, GLFWwindow *window)
         Camera_processKeyboard(camera, LEFT, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         Camera_processKeyboard(camera, RIGHT, deltaTime);
+    */
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
         PhysicsWorld_addObject(&physics_world);
+    if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS)
+        PhysicsWorld_impulse(&physics_world, deltaTime, physicsObject->Transform.position, 70, 12);
 }
-
-static bool firstMouse = true;
-static Camera camera;
-static float lastX, lastY;
 
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
 {
@@ -61,6 +67,7 @@ int main(int argc, char** argv){
     srand(time(NULL));
 
     ComponentPool component_pool = ComponentPool_Create();
+
 
     // Creation d'une camera
     camera = Camera_createCamera(glms_vec3_zero(),(vec3s)VECTOR_UP,(vec3s)VECTOR_FRONT,CAMERA_YAW, CAMERA_PITCH,CAMERA_SPEED,CAMERA_SENSIVITY,CAMERA_ZOOM);
@@ -113,6 +120,17 @@ int main(int argc, char** argv){
 
     vec3s lightDirection = {0.403945,0.868481,0.287348};
 
+    physicsObject = PhysicsWorld_addObject(&physics_world);
+    physicsObject->PhysicsTag = PLAYER;
+
+    GameObject game_object = GameObject_Create();
+    if (!GameObject_AddComponent(&game_object, &component_pool, COMPONENT_PLAYER_CONTROLLER)) {
+        LOG("ERROR ADDING PLAYER CONTROLLER");
+    }
+    PlayerController* player_controller = GameObject_GetComponent(&game_object, &component_pool, COMPONENT_PLAYER_CONTROLLER);
+    Component_PlayerController_Init(player_controller, physicsObject, &camera, window);
+
+
     float timeCheck = 0.0;
     int nbFrames = 0;
     while (!glfwWindowShouldClose(window)) {
@@ -142,6 +160,8 @@ int main(int argc, char** argv){
         // Ici on fait ce qu'on veut
         processInput(&camera, deltaTime, window);
 
+        Component_PlayerController_Update(player_controller, &game_object, deltaTime);
+
         // Commun pour tout les models
         mat4s view = Camera_getViewMatrix(&camera);
         Shader_use(&shader);
@@ -157,6 +177,13 @@ int main(int argc, char** argv){
                 tMatrix = glms_scale(tMatrix, glms_vec3_scale(col->HalfSize,2.0));
             }
             Shader_setMat4(&shader, "model", tMatrix);
+            if (physics_world.physicsObjects[i].PhysicsTag == PLAYER) {
+                Shader_setBool(&shader, "player", true);
+            }
+            else {
+                Shader_setBool(&shader, "player", false);
+
+            }
             Shape_draw(&cube);
         }
 

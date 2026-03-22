@@ -21,5 +21,6 @@ void PhysicsWorld_addCollision(PhysicsWorld* world, Collision* collision);
 bool PhysicsWorld_removeObject(PhysicsWorld *world, PhysicsObject* physicsObject);
 void PhysicsWorld_step(PhysicsWorld *world, float deltaTime);
 void PhysicsWorld_resolveCollisions(PhysicsWorld *world, float deltaTime);
+void PhysicsWorld_impulse(PhysicsWorld *world, float deltaTime, vec3s position, float intensity, float attenuationRadius);
 
 #endif //CHERRYENGINE_PHYSICSWORLD_H

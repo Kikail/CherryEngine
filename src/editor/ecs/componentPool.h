@@ -33,6 +33,6 @@ ComponentPool ComponentPool_Create();
 bool ComponentPool_CheckSpace(ComponentPool* componentPool, ComponentType componentType);
 bool ComponentPool_CreateComponent(ComponentPool* componentPool, ComponentType componentType, uint32* index);
 void* ComponentPool_GetComponent(ComponentPool* componentPool, ComponentType componentType, uint32 index);
-void ComponentPool_UpdateComponent(ComponentPool* componentPool, ComponentType componentType, void* component, GameObject* gameObject);
+void ComponentPool_UpdateComponent(ComponentPool* componentPool, ComponentType componentType, void* component, GameObject* gameObject, float deltaTime);
 
 #endif //CHERRYENGINE_COMPONENTPOOL_H

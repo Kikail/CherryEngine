@@ -93,7 +93,7 @@ void* ComponentPool_GetComponent(ComponentPool* componentPool, ComponentType com
     return NULL;
 }
 
-void ComponentPool_UpdateComponent(ComponentPool* componentPool, ComponentType componentType, void* component, GameObject* gameObject){
+void ComponentPool_UpdateComponent(ComponentPool* componentPool, ComponentType componentType, void* component, GameObject* gameObject, float deltaTime){
     if(component == NULL){
 #ifdef DEBUG
         LOG("ComponentPool_UpdateComponent::Component is NULL");
@@ -107,7 +107,7 @@ void ComponentPool_UpdateComponent(ComponentPool* componentPool, ComponentType c
             // Pas de Update pour Transform
             break;
         case COMPONENT_PLAYER_CONTROLLER:
-            Component_PlayerController_Update(component, gameObject);
+            Component_PlayerController_Update(component, gameObject, deltaTime);
             break;
         case COMPONENT_SPRITE_RENDERER:
             Component_SpriteRenderer_Update(component, gameObject);
