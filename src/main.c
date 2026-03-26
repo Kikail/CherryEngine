@@ -26,6 +26,11 @@ static float lastX, lastY;
 
 PhysicsObject* physicsObject;
 
+Shader shader;
+bool onceKey = true;
+bool onceMouse = true;
+bool captureMouse = true;
+
 void processInput(Camera* camera, float deltaTime, GLFWwindow *window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
@@ -44,6 +49,38 @@ void processInput(Camera* camera, float deltaTime, GLFWwindow *window)
         PhysicsWorld_addObject(&physics_world);
     if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS)
         PhysicsWorld_impulse(&physics_world, deltaTime, physicsObject->Transform.position, 70, 12);
+
+    if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS) {
+        if (!onceMouse)return;
+        onceMouse = false;
+        captureMouse = (captureMouse) ? false : true;
+        if (captureMouse) {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        }
+        else {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        }
+        LOG(captureMouse ? "capture true" : "capture false");
+    }
+    else {
+        onceMouse = true;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS) {
+        if (!onceKey)return;
+        onceKey = false;
+        Shader loaded;
+        LOG("CHARGEMENT DES SHADERS...");
+        if (!Shader_load(&loaded, "/home/killian/Projects/C/CherryEngine/resources/shaders/test.vs", "/home/killian/Projects/C/CherryEngine/resources/shaders/test.fs")) {
+            LOG("Erreur de chargement des shaders");
+        }
+        else {
+            shader = loaded;
+        }
+    }
+    else {
+        onceKey = true;
+    }
 }
 
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
@@ -56,8 +93,9 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
     float yoffset = lastY - ypos;
     lastX = xpos;
     lastY = ypos;
-
-    Camera_processMouseMovement(&camera, xoffset, yoffset);
+    if (captureMouse) {
+        Camera_processMouseMovement(&camera, xoffset, yoffset);
+    }
 }
 
 #define WIDTH 1280.0f
@@ -113,7 +151,6 @@ int main(int argc, char** argv){
 
     physics_world = PhysicsWorld_create();
 
-    Shader shader;
     if (!Shader_load(&shader, "/home/killian/Projects/C/CherryEngine/resources/shaders/test.vs", "/home/killian/Projects/C/CherryEngine/resources/shaders/test.fs")) {
         LOG("Erreur de chargement des shaders");
     }
@@ -166,6 +203,8 @@ int main(int argc, char** argv){
         mat4s view = Camera_getViewMatrix(&camera);
         Shader_use(&shader);
         Shader_setVec3(&shader, "lightDirection", lightDirection);
+        Shader_setVec3(&shader, "viewPos", camera.position);
+        Shader_setFloat(&shader, "uTime", (float)glfwGetTime());
         Shader_setMat4(&shader, "view", view);
         Shader_setMat4(&shader, "projection", perspective);
 

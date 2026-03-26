@@ -3,23 +3,29 @@ out vec4 FragColor;
 
 in vec2 TexCoords;
 in vec3 iNormal;
+in vec3 FragPos;
+in vec4 FragPosLightSpace;
 
+uniform vec3 viewPos;
 uniform vec3 lightDirection;
+uniform float uTime;
 uniform int player;
+
 
 void main()
 {
-    if(player == 1){
-        vec3 color = vec3(0.6,0.6,0.6);
-        float lightIntensity = dot(normalize(iNormal), normalize(lightDirection));
-        vec3 intensity = color * lightIntensity;
-        vec3 ambient = 0.2 * color;
-        FragColor = vec4( ambient + intensity, 1.0);
+    vec3 lightDir = normalize(lightDirection);
+
+    vec3 color;
+    if(player == 1) {
+        color = vec3(abs(cos(uTime)), abs(sin(uTime)), 0.0);
+    } else {
+        color = vec3(0.7);
     }
-    else{
-        float lightIntensity = dot(normalize(iNormal), normalize(lightDirection));
-        vec3 intensity = iNormal * lightIntensity;
-        vec3 ambient = 0.2 * iNormal;
-        FragColor = vec4( ambient + intensity, 1.0);
-    }
+
+    float ambient = 0.3;
+    float intensity = max(0.0, dot(iNormal, lightDir));
+    vec3 diffuse = (ambient * color) + (intensity * color);
+
+    FragColor = vec4(diffuse, 1.0);
 }
