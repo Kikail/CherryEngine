@@ -46,7 +46,7 @@ void processInput(Camera* camera, float deltaTime, GLFWwindow *window)
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         Camera_processKeyboard(camera, RIGHT, deltaTime);
     */
-    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS)
         PhysicsWorld_addObject(&physics_world);
     if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS)
         PhysicsWorld_impulse(&physics_world, deltaTime, physicsObject->Transform.position, 70, 12);
@@ -99,8 +99,8 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
     }
 }
 
-#define WIDTH 1280.0f
-#define HEIGHT 720.0f
+#define WIDTH 1920.0f
+#define HEIGHT 1080.0f
 
 int main(int argc, char** argv){
     srand(time(NULL));
@@ -212,53 +212,46 @@ int main(int argc, char** argv){
 
         // 1. On calcule la matrice de vue une seule fois par frame (optimisation)
         mat4s view = Camera_getViewMatrix(&camera);
-
         // 2. Boucle de rendu
         for (int i = 0; i < physics_world.numPhysicsObjects; i++) {
             PhysicsObject* obj = &physics_world.physicsObjects[i];
 
-            if (obj->PhysicsTag == PLAYER) {
-                // Calcul de la matrice Model (commune au cube et au modèle)
-                mat4s tMatrix = glms_translate(glms_mat4_identity(), obj->Transform.position);
-                if (obj->Collider->type == CUBE) {
-                    BoxCollider* col = obj->Collider->collider;
-                    // J'utilise 2.0f car HalfSize est... la moitié. 2.0f redonne la taille réelle.
-                    tMatrix = glms_scale(tMatrix, glms_vec3_scale(col->HalfSize, 0.15f));
-                }
+            // --- CALCUL DE LA MATRICE MODEL AVEC ROTATION ---
+            // 1. Translation
+            mat4s translation = glms_translate(glms_mat4_identity(), obj->Transform.position);
 
-                // --- RENDU DU MODÈLE (PLAYER) ---
-                Shader_use(&shader); // TOUJOURS appeler Shader_use AVANT les Shader_set
+            // 2. Rotation (On transforme le quaternion Orientation en matrice 4x4)
+            mat4s rotation = glms_quat_mat4(obj->Orientation);
 
-                Shader_setMat4(&shader, "projection", perspective);
-                Shader_setMat4(&shader, "view", view);
-                Shader_setMat4(&shader, "model", tMatrix);
-
-                Shader_setVec3(&shader, "lightDirection", lightDirection);
-                Shader_setVec3(&shader, "viewPos", camera.position);
-                Shader_setBool(&shader, "player", true);
-
-                Model_Draw(&model, &shader);
+            // 3. Scale (On récupère la taille du collider)
+            mat4s scale = glms_mat4_identity();
+            if (obj->Collider->type == CUBE) {
+                BoxCollider* col = obj->Collider->collider;
+                // Si c'est un objet dynamique (ex: tes modèles), on scale différemment
+                float scaleFactor = (obj->PhysicsType == STATIC) ? 2.0f : 0.1f;
+                scale = glms_scale(glms_mat4_identity(), glms_vec3_scale(col->HalfSize, scaleFactor));
             }
-            else {
-                // Calcul de la matrice Model (commune au cube et au modèle)
-                mat4s tMatrix = glms_translate(glms_mat4_identity(), obj->Transform.position);
-                if (obj->Collider->type == CUBE) {
-                    BoxCollider* col = obj->Collider->collider;
-                    // J'utilise 2.0f car HalfSize est... la moitié. 2.0f redonne la taille réelle.
-                    tMatrix = glms_scale(tMatrix, glms_vec3_scale(col->HalfSize, 2.0f));
-                }
 
-                // --- RENDU DU CUBE SIMPLE (AUTRES) ---
+            // Combinaison : Model = T * R * S
+            mat4s modelMatrix = glms_mat4_mul(translation, glms_mat4_mul(rotation, scale));
+
+            if (obj->PhysicsType == STATIC) {
                 Shader_use(&cubeShader);
-
                 Shader_setMat4(&cubeShader, "projection", perspective);
                 Shader_setMat4(&cubeShader, "view", view);
-                Shader_setMat4(&cubeShader, "model", tMatrix);
-
+                Shader_setMat4(&cubeShader, "model", modelMatrix); // Utilisation de la nouvelle matrice
                 Shader_setVec3(&cubeShader, "lightDirection", lightDirection);
-                Shader_setBool(&cubeShader, "player", false);
-
                 Shape_draw(&cube);
+            }
+            else {
+                if (obj->PhysicsTag == PLAYER) continue;
+
+                Shader_use(&shader);
+                Shader_setMat4(&shader, "projection", perspective);
+                Shader_setMat4(&shader, "view", view);
+                Shader_setMat4(&shader, "model", modelMatrix); // Utilisation de la nouvelle matrice
+                Shader_setVec3(&shader, "lightDirection", lightDirection);
+                Model_Draw(&model, &shader);
             }
         }
 

@@ -20,17 +20,25 @@ typedef enum PhysicsType_t {
     STATIC
 }PhysicsType;
 
-typedef struct PhysicsObject_t {
+typedef struct {
+    Transform Transform;
+    Collider* Collider;
+
+    // Linéaire
     vec3s Velocity;
     vec3s Force;
     float Mass;
-
-    Collider* Collider;
-    Transform Transform;
+    float InverseMass;
 
     PhysicsType PhysicsType;
     PhysicsTag PhysicsTag;
-}PhysicsObject;
+
+    // --- NOUVEAU : ANGULAIRE ---
+    versors Orientation;      // Quaternion (cglm : versors)
+    vec3s AngularVelocity;    // Vitesse de rotation (rad/s)
+    vec3s Torque;             // Forces de rotation
+    mat3s InertiaTensorInv;   // Résistance à la rotation (Inverse)
+} PhysicsObject;
 
 
 #endif //CHERRYENGINE_PHYSICSOBJECT_H

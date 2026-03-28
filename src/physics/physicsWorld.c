@@ -1,16 +1,35 @@
 #include "physicsWorld.h"
 #include "testCollision.h"
+
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 
-// Fonction utilitaire locale pour éviter de répéter le code des murs
-void addWall(PhysicsWorld* world, vec3s pos, vec3s halfSize) {
-    if (world->numPhysicsObjects >= PHYSICS_MAX_OBJECTS) return;
+// -----------------------------------------------------------------------------
+// Utilitaires locaux
+// -----------------------------------------------------------------------------
+
+static void initPhysicsObject(PhysicsObject* obj) {
+    if (!obj) return;
+    memset(obj, 0, sizeof(*obj));
+    obj->Orientation = glms_quat_identity();
+    obj->InertiaTensorInv = (mat3s){0};
+}
+
+static void addWall(PhysicsWorld* world, vec3s pos, vec3s halfSize) {
+    if (!world || world->numPhysicsObjects >= PHYSICS_MAX_OBJECTS) return;
 
     PhysicsObject* wall = &world->physicsObjects[world->numPhysicsObjects++];
+    initPhysicsObject(wall);
 
     Collider* collider = (Collider*)malloc(sizeof(Collider));
     BoxCollider* box = (BoxCollider*)malloc(sizeof(BoxCollider));
+    if (!collider || !box) {
+        free(collider);
+        free(box);
+        world->numPhysicsObjects--;
+        return;
+    }
 
     collider->type = CUBE;
     box->HalfSize = halfSize;
@@ -18,166 +37,332 @@ void addWall(PhysicsWorld* world, vec3s pos, vec3s halfSize) {
 
     wall->Collider = collider;
     wall->PhysicsType = STATIC;
+    wall->PhysicsTag = ENVIRONMENT;
+
     wall->Transform.position = pos;
     wall->Velocity = glms_vec3_zero();
-    wall->Mass = 1.0f;
     wall->Force = glms_vec3_zero();
+    wall->AngularVelocity = glms_vec3_zero();
+    wall->Torque = glms_vec3_zero();
+
+    wall->Mass = 0.0f;
+    wall->InverseMass = 0.0f;
+    wall->InertiaTensorInv = (mat3s){0};
 }
+
+static mat3s CalculateBoxInertiaInv(float mass, vec3s halfSize) {
+    if (mass <= 0.0f) {
+        return (mat3s){0};
+    }
+
+    float dx = halfSize.x * 2.0f;
+    float dy = halfSize.y * 2.0f;
+    float dz = halfSize.z * 2.0f;
+
+    // Inertie d'un pavé autour du centre de masse
+    float factor = mass / 12.0f;
+
+    mat3s inertia = (mat3s){0};
+    inertia.m00 = factor * (dy * dy + dz * dz);
+    inertia.m11 = factor * (dx * dx + dz * dz);
+    inertia.m22 = factor * (dx * dx + dy * dy);
+
+    return glms_mat3_inv(inertia);
+}
+
+static void ApplyDampingToObject(PhysicsObject* obj, float deltaTime) {
+    if (!obj || obj->PhysicsType == STATIC) return;
+
+    // Damping exponentiel, plus stable que des facteurs fixes par frame
+    float linearDamping = expf(-1.5f * deltaTime);
+    float angularDamping = expf(-4.0f * deltaTime);
+
+    obj->Velocity = glms_vec3_scale(obj->Velocity, linearDamping);
+    obj->AngularVelocity = glms_vec3_scale(obj->AngularVelocity, angularDamping);
+
+    // Seuils pour tuer les micro-mouvements
+    if (glms_vec3_norm2(obj->Velocity) < 0.000001f) {
+        obj->Velocity = glms_vec3_zero();
+    }
+
+    if (glms_vec3_norm2(obj->AngularVelocity) < 0.000001f) {
+        obj->AngularVelocity = glms_vec3_zero();
+    }
+}
+
+// -----------------------------------------------------------------------------
+// API
+// -----------------------------------------------------------------------------
 
 PhysicsWorld PhysicsWorld_create() {
     PhysicsWorld world;
-    world.numPhysicsObjects = 0;
-    world.numCollisions = 0;
-    world.gravity = (vec3s){0, -9.81f, 0};
+    memset(&world, 0, sizeof(world));
 
-    float groundSize = 30.0f; // La moitié de 30
-    float wallHeight = 1.5f;  // La moitié de 3
-    float wallThickness = 0.5f;
+    world.gravity = (vec3s){0.0f, -9.81f, 0.0f};
 
-    // 1. LE SOL (Centre : 0, -5, 0)
+    float groundSize = 30.0f;
+
+    // Sol
     addWall(&world, (vec3s){0.0f, -5.0f, 0.0f}, (vec3s){groundSize, 0.5f, groundSize});
 
     return world;
 }
 
-PhysicsObject* PhysicsWorld_addObject(PhysicsWorld *world) {
-    if (world->numPhysicsObjects < PHYSICS_MAX_OBJECTS) {
-        world->numPhysicsObjects += 1;
-        PhysicsObject* obj = &world->physicsObjects[world->numPhysicsObjects - 1];
+PhysicsObject* PhysicsWorld_addObject(PhysicsWorld* world) {
+    if (!world || world->numPhysicsObjects >= PHYSICS_MAX_OBJECTS) return NULL;
 
-        // --- CREATION D'UN CUBE DYNAMIQUE ---
-        Collider* collider = (Collider*)malloc(sizeof(Collider));
-        BoxCollider* boxCollider = (BoxCollider*)malloc(sizeof(BoxCollider));
+    PhysicsObject* obj = &world->physicsObjects[world->numPhysicsObjects++];
+    initPhysicsObject(obj);
 
-        collider->type = CUBE;
-        // Cube de taille 1x1x1 standard (HalfSize = 0.5)
-        boxCollider->HalfSize = (vec3s){0.5f, 0.5f, 0.5f};
-
-        collider->collider = boxCollider;
-        obj->Collider = collider;
-
-        obj->PhysicsType = DYNAMIC;
-        obj->Mass = 1.0f;
-
-        // Spawn aléatoire sur la surface du plateau (entre -14 et 14 pour pas tomber direct)
-        float rx = ((float)rand() / (float)RAND_MAX) * 28.0f - 14.0f;
-        float rz = ((float)rand() / (float)RAND_MAX) * 28.0f - 14.0f;
-
-        obj->Transform.position = (vec3s){rx, 15.0f, rz};
-
-        // Petite impulsion aléatoire
-        float vx = ((float)rand() / (float)RAND_MAX) * 2.0f - 1.0f;
-        float vz = ((float)rand() / (float)RAND_MAX) * 2.0f - 1.0f;
-        obj->Velocity = (vec3s){vx, 0.0f, vz};
-
-        obj->Force = (vec3s){0.0f, 0.0f, 0.0f};
-
-        return obj;
+    Collider* collider = (Collider*)malloc(sizeof(Collider));
+    BoxCollider* boxCollider = (BoxCollider*)malloc(sizeof(BoxCollider));
+    if (!collider || !boxCollider) {
+        free(collider);
+        free(boxCollider);
+        world->numPhysicsObjects--;
+        return NULL;
     }
-    return NULL;
+
+    collider->type = CUBE;
+    boxCollider->HalfSize = (vec3s){0.5f, 0.5f, 0.5f};
+    collider->collider = boxCollider;
+
+    obj->Collider = collider;
+    obj->PhysicsType = DYNAMIC;
+    obj->PhysicsTag = ENVIRONMENT;
+
+    obj->Mass = 1.0f;
+    obj->InverseMass = 1.0f / obj->Mass;
+
+    float rx = ((float)rand() / (float)RAND_MAX) * 28.0f - 14.0f;
+    float rz = ((float)rand() / (float)RAND_MAX) * 28.0f - 14.0f;
+
+    obj->Transform.position = (vec3s){rx, 15.0f, rz};
+    obj->Velocity = (vec3s){
+        ((float)rand() / (float)RAND_MAX) * 2.0f - 1.0f,
+        0.0f,
+        ((float)rand() / (float)RAND_MAX) * 2.0f - 1.0f
+    };
+
+    obj->Force = glms_vec3_zero();
+    obj->Orientation = glms_quat_identity();
+    obj->AngularVelocity = glms_vec3_zero();
+    obj->Torque = glms_vec3_zero();
+
+    obj->InertiaTensorInv = CalculateBoxInertiaInv(obj->Mass, boxCollider->HalfSize);
+
+    return obj;
 }
 
-// physicsWorld.c
+void PhysicsWorld_step(PhysicsWorld* world, float deltaTime) {
+    if (!world || deltaTime <= 0.0f) return;
 
-void PhysicsWorld_step(PhysicsWorld *world, float deltaTime) {
-    // 1. D'ABORD : Appliquer la gravité et mettre à jour la position
     for (int i = 0; i < world->numPhysicsObjects; i++) {
         PhysicsObject* obj = &world->physicsObjects[i];
         if (obj->PhysicsType == STATIC) continue;
 
-        vec3s gravityForce = glms_vec3_scale(world->gravity, obj->Mass);
-        vec3s totalForce = glms_vec3_add(obj->Force, gravityForce);
-        vec3s acceleration = glms_vec3_scale(totalForce, 1.0f / obj->Mass);
+        // ---------------------------------------------------------------------
+        // Intégration linéaire
+        // a = g + F/m
+        // ---------------------------------------------------------------------
+        vec3s accel = world->gravity;
+        if (obj->InverseMass > 0.0f) {
+            accel = glms_vec3_add(accel, glms_vec3_scale(obj->Force, obj->InverseMass));
+        }
 
-        // Mise à jour vitesse et position (Euler semi-implicite)
-        obj->Velocity = glms_vec3_add(obj->Velocity, glms_vec3_scale(acceleration, deltaTime));
+        obj->Velocity = glms_vec3_add(obj->Velocity, glms_vec3_scale(accel, deltaTime));
         obj->Transform.position = glms_vec3_add(obj->Transform.position, glms_vec3_scale(obj->Velocity, deltaTime));
-        obj->Force = (vec3s){0.0f, 0.0f, 0.0f};
+
+        // ---------------------------------------------------------------------
+        // Intégration angulaire
+        // ---------------------------------------------------------------------
+        vec3s angularAccel = glms_mat3_mulv(obj->InertiaTensorInv, obj->Torque);
+        obj->AngularVelocity = glms_vec3_add(obj->AngularVelocity, glms_vec3_scale(angularAccel, deltaTime));
+
+        // q' = 0.5 * omega * q
+        versors q = obj->Orientation;
+        vec3s w = obj->AngularVelocity;
+
+        versors wq;
+        wq.raw[0] =  w.x * q.raw[3] + w.y * q.raw[2] - w.z * q.raw[1];
+        wq.raw[1] =  w.y * q.raw[3] + w.z * q.raw[0] - w.x * q.raw[2];
+        wq.raw[2] =  w.z * q.raw[3] + w.x * q.raw[1] - w.y * q.raw[0];
+        wq.raw[3] = -w.x * q.raw[0] - w.y * q.raw[1] - w.z * q.raw[2];
+
+        obj->Orientation.raw[0] += wq.raw[0] * 0.5f * deltaTime;
+        obj->Orientation.raw[1] += wq.raw[1] * 0.5f * deltaTime;
+        obj->Orientation.raw[2] += wq.raw[2] * 0.5f * deltaTime;
+        obj->Orientation.raw[3] += wq.raw[3] * 0.5f * deltaTime;
+        obj->Orientation = glms_quat_normalize(obj->Orientation);
+
+        // Reset des accumulateurs
+        obj->Force = glms_vec3_zero();
+        obj->Torque = glms_vec3_zero();
     }
 
-    // 2. ENSUITE : Résoudre les collisions pour corriger la position et la vitesse
     PhysicsWorld_resolveCollisions(world, deltaTime);
 
     for (int i = 0; i < world->numCollisions; i++) {
-        PhysicsObject* a = world->collisions[i].objectA;
-        PhysicsObject* b = world->collisions[i].objectB;
-        CollisionPoints* cp = &world->collisions[i].Points;
+        Collision* col = &world->collisions[i];
+        PhysicsObject* a = col->objectA;
+        PhysicsObject* b = col->objectB;
+        CollisionPoints* cp = &col->Points;
 
-        float invMassA = (a->PhysicsType == STATIC) ? 0.0f : 1.0f / a->Mass;
-        float invMassB = (b->PhysicsType == STATIC) ? 0.0f : 1.0f / b->Mass;
+        if (!cp->HasCollision) continue;
+
+        float invMassA = (a->PhysicsType == STATIC) ? 0.0f : a->InverseMass;
+        float invMassB = (b->PhysicsType == STATIC) ? 0.0f : b->InverseMass;
         float totalInvMass = invMassA + invMassB;
+
         if (totalInvMass <= 0.0f) continue;
 
-        // --- SÉPARATION (Anti-tremblement) ---
-        float slop = 0.02f; // Marge de tolérance augmentée
-        float percent = 0.5f; // On sépare plus doucement
-        float correctionMagnitude = (fmaxf(cp->Depth - slop, 0.0f) / totalInvMass) * percent;
-        vec3s correctionVector = glms_vec3_scale(cp->Normal, correctionMagnitude);
+        // ---------------------------------------------------------------------
+        // 1) Correction de pénétration
+        // ---------------------------------------------------------------------
+        float slop = 0.01f;
+        float percent = 0.6f;
+        float penetration = fmaxf(cp->Depth - slop, 0.0f);
 
-        a->Transform.position = glms_vec3_sub(a->Transform.position, glms_vec3_scale(correctionVector, invMassA));
-        b->Transform.position = glms_vec3_add(b->Transform.position, glms_vec3_scale(correctionVector, invMassB));
+        vec3s correction = glms_vec3_scale(cp->Normal, (penetration / totalInvMass) * percent);
 
-        // --- RÉPONSE D'IMPULSION ---
-        vec3s relativeVelocity = glms_vec3_sub(b->Velocity, a->Velocity);
-        float velAlongNormal = glms_vec3_dot(relativeVelocity, cp->Normal);
-
-        if (velAlongNormal > 0) continue; // S'éloignent déjà
-
-        float e = 0.2f; // Rebond faible pour la stabilité
-        float j = -(1.0f + e) * velAlongNormal;
-        j /= totalInvMass;
-
-        vec3s impulse = glms_vec3_scale(cp->Normal, j);
-        a->Velocity = glms_vec3_sub(a->Velocity, glms_vec3_scale(impulse, invMassA));
-        b->Velocity = glms_vec3_add(b->Velocity, glms_vec3_scale(impulse, invMassB));
-
-        // --- DANS TA BOUCLE DE COLLISION ---
-
-        // 1. Calculer la vitesse relative
-        vec3s rv = glms_vec3_sub(b->Velocity, a->Velocity);
-
-        // 2. Calculer la composante tangente (perpendiculaire à la normale)
-        vec3s tangent = glms_vec3_sub(rv, glms_vec3_scale(cp->Normal, glms_vec3_dot(rv, cp->Normal)));
-
-        if (glms_vec3_norm(tangent) > 0.001f) {
-            tangent = glms_vec3_normalize(tangent);
+        if (a->PhysicsType != STATIC) {
+            a->Transform.position = glms_vec3_sub(a->Transform.position, glms_vec3_scale(correction, invMassA));
+        }
+        if (b->PhysicsType != STATIC) {
+            b->Transform.position = glms_vec3_add(b->Transform.position, glms_vec3_scale(correction, invMassB));
         }
 
-        // 3. Calculer la magnitude de l'impulsion de friction (Coulomb's Law)
-        float jt = -glms_vec3_dot(rv, tangent);
-        jt /= totalInvMass;
+        // Bras de levier
+        vec3s rA = glms_vec3_sub(cp->A, a->Transform.position);
+        vec3s rB = glms_vec3_sub(cp->B, b->Transform.position);
 
-        // Friction simple (entre 0.0 et 1.0)
-        float mu = 5.0;
+        // ---------------------------------------------------------------------
+        // 2) Impulsion normale
+        // ---------------------------------------------------------------------
+        vec3s vA = glms_vec3_add(a->Velocity, glms_vec3_cross(a->AngularVelocity, rA));
+        vec3s vB = glms_vec3_add(b->Velocity, glms_vec3_cross(b->AngularVelocity, rB));
+        vec3s rv = glms_vec3_sub(vB, vA);
 
-        // On limite la friction par l'impulsion normale (j) pour ne pas freiner plus que l'impact
-        float frictionImpulseMagnitude = fmaxf(-j * mu, fminf(jt, j * mu));
+        float velAlongNormal = glms_vec3_dot(rv, cp->Normal);
+        if (velAlongNormal > 0.0f) continue;
 
-        vec3s frictionImpulse = glms_vec3_scale(tangent, frictionImpulseMagnitude);
+        vec3s raCrossN = glms_vec3_cross(rA, cp->Normal);
+        vec3s rbCrossN = glms_vec3_cross(rB, cp->Normal);
 
-        // 4. Appliquer au joueur et aux objets
-        a->Velocity = glms_vec3_sub(a->Velocity, glms_vec3_scale(frictionImpulse, invMassA));
-        b->Velocity = glms_vec3_add(b->Velocity, glms_vec3_scale(frictionImpulse, invMassB));
+        float angularTermA = 0.0f;
+        float angularTermB = 0.0f;
+
+        if (a->PhysicsType != STATIC) {
+            angularTermA = glms_vec3_dot(glms_mat3_mulv(a->InertiaTensorInv, raCrossN), raCrossN);
+        }
+        if (b->PhysicsType != STATIC) {
+            angularTermB = glms_vec3_dot(glms_mat3_mulv(b->InertiaTensorInv, rbCrossN), rbCrossN);
+        }
+
+        float e = 0.08f; // rebond faible pour un comportement plus stable
+        float j = -(1.0f + e) * velAlongNormal;
+        j /= (totalInvMass + angularTermA + angularTermB);
+
+        vec3s impulse = glms_vec3_scale(cp->Normal, j);
+
+        if (a->PhysicsType != STATIC) {
+            a->Velocity = glms_vec3_sub(a->Velocity, glms_vec3_scale(impulse, invMassA));
+            a->AngularVelocity = glms_vec3_sub(
+                a->AngularVelocity,
+                glms_mat3_mulv(a->InertiaTensorInv, glms_vec3_cross(rA, impulse))
+            );
+        }
+
+        if (b->PhysicsType != STATIC) {
+            b->Velocity = glms_vec3_add(b->Velocity, glms_vec3_scale(impulse, invMassB));
+            b->AngularVelocity = glms_vec3_add(
+                b->AngularVelocity,
+                glms_mat3_mulv(b->InertiaTensorInv, glms_vec3_cross(rB, impulse))
+            );
+        }
+
+        // ---------------------------------------------------------------------
+        // 3) Friction tangentielle
+        // ---------------------------------------------------------------------
+        vA = glms_vec3_add(a->Velocity, glms_vec3_cross(a->AngularVelocity, rA));
+        vB = glms_vec3_add(b->Velocity, glms_vec3_cross(b->AngularVelocity, rB));
+        rv = glms_vec3_sub(vB, vA);
+
+        vec3s tangent = glms_vec3_sub(rv, glms_vec3_scale(cp->Normal, glms_vec3_dot(rv, cp->Normal)));
+        if (glms_vec3_norm2(tangent) > 0.0001f) {
+            tangent = glms_vec3_normalize(tangent);
+
+            vec3s raCrossT = glms_vec3_cross(rA, tangent);
+            vec3s rbCrossT = glms_vec3_cross(rB, tangent);
+
+            float angularTermTangentA = 0.0f;
+            float angularTermTangentB = 0.0f;
+
+            if (a->PhysicsType != STATIC) {
+                angularTermTangentA = glms_vec3_dot(glms_mat3_mulv(a->InertiaTensorInv, raCrossT), raCrossT);
+            }
+            if (b->PhysicsType != STATIC) {
+                angularTermTangentB = glms_vec3_dot(glms_mat3_mulv(b->InertiaTensorInv, rbCrossT), rbCrossT);
+            }
+
+            float jt = -glms_vec3_dot(rv, tangent);
+            jt /= (totalInvMass + angularTermTangentA + angularTermTangentB);
+
+            float mu = 0.45f;
+            float maxFriction = fabsf(j) * mu;
+
+            if (jt > maxFriction) jt = maxFriction;
+            if (jt < -maxFriction) jt = -maxFriction;
+
+            vec3s frictionImpulse = glms_vec3_scale(tangent, jt);
+
+            if (a->PhysicsType != STATIC) {
+                a->Velocity = glms_vec3_sub(a->Velocity, glms_vec3_scale(frictionImpulse, invMassA));
+                a->AngularVelocity = glms_vec3_sub(
+                    a->AngularVelocity,
+                    glms_mat3_mulv(a->InertiaTensorInv, glms_vec3_cross(rA, frictionImpulse))
+                );
+            }
+
+            if (b->PhysicsType != STATIC) {
+                b->Velocity = glms_vec3_add(b->Velocity, glms_vec3_scale(frictionImpulse, invMassB));
+                b->AngularVelocity = glms_vec3_add(
+                    b->AngularVelocity,
+                    glms_mat3_mulv(b->InertiaTensorInv, glms_vec3_cross(rB, frictionImpulse))
+                );
+            }
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Damping final après collisions
+    // -------------------------------------------------------------------------
+    for (int i = 0; i < world->numPhysicsObjects; i++) {
+        ApplyDampingToObject(&world->physicsObjects[i], deltaTime);
     }
 }
+
 void PhysicsWorld_addCollision(PhysicsWorld* world, Collision* collision) {
+    if (!world || !collision) return;
+
     if (world->numCollisions < PHYSICS_MAX_OBJECTS * 2) {
         world->collisions[world->numCollisions] = *collision;
         world->numCollisions += 1;
     }
 }
 
-void PhysicsWorld_resolveCollisions(PhysicsWorld *world, float deltaTime) {
+void PhysicsWorld_resolveCollisions(PhysicsWorld* world, float deltaTime) {
+    (void)deltaTime;
+
+    if (!world) return;
+
     world->numCollisions = 0;
 
     for (int i = 0; i < world->numPhysicsObjects; i++) {
-        // CORRECTION 1 : j = i + 1 (pour ne pas tester un objet contre lui-même)
         for (int j = i + 1; j < world->numPhysicsObjects; j++) {
-
-            // CORRECTION 2 : obj.Collider est déjà un pointeur, on enlève le '&'
             CollisionPoints collisionPoints = Collisions_testCollisions(
-                world->physicsObjects[i].Collider, &world->physicsObjects[i].Transform,
-                world->physicsObjects[j].Collider, &world->physicsObjects[j].Transform
+                &world->physicsObjects[i],
+                &world->physicsObjects[j]
             );
 
             if (collisionPoints.HasCollision) {
@@ -191,12 +376,17 @@ void PhysicsWorld_resolveCollisions(PhysicsWorld *world, float deltaTime) {
     }
 }
 
-void PhysicsWorld_impulse(PhysicsWorld *world, float deltaTime, vec3s position, float intensity, float attenuationRadius) {
+void PhysicsWorld_impulse(PhysicsWorld* world, float deltaTime, vec3s position, float intensity, float attenuationRadius) {
+    (void)deltaTime;
+
+    if (!world || attenuationRadius <= 0.0f) return;
+
     for (int i = 0; i < world->numPhysicsObjects; i++) {
         PhysicsObject* obj = &world->physicsObjects[i];
 
         // On n'explose pas le sol ou les murs statiques
         if (obj->PhysicsType == STATIC || obj->PhysicsTag == PLAYER) continue;
+        if (obj->Mass <= 0.0f) continue;
 
         // 1. Calculer le vecteur direction (de l'explosion vers l'objet)
         vec3s dir = glms_vec3_sub(obj->Transform.position, position);
@@ -204,19 +394,16 @@ void PhysicsWorld_impulse(PhysicsWorld *world, float deltaTime, vec3s position, 
 
         // 2. Vérifier si l'objet est dans le rayon d'action
         if (distance < attenuationRadius && distance > 0.0001f) {
-            // Normaliser le vecteur direction
             dir = glms_vec3_normalize(dir);
 
-            // 3. Calculer l'atténuation (0.0 à 1.0)
-            // Plus on est loin, moins c'est fort
+            // 3. Atténuation
             float strength = 1.0f - (distance / attenuationRadius);
 
-            // 4. Calculer la force finale
+            // 4. Force finale
             float forceMagnitude = intensity * strength;
             vec3s impulse = glms_vec3_scale(dir, forceMagnitude);
 
-            // 5. Appliquer directement à la vitesse (Impulsion instantanée)
-            // On divise par la masse : F = ma -> a = F/m
+            // 5. Application immédiate à la vitesse
             vec3s velocityChange = glms_vec3_scale(impulse, 1.0f / obj->Mass);
             obj->Velocity = glms_vec3_add(obj->Velocity, velocityChange);
         }

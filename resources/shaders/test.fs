@@ -19,8 +19,7 @@ void main()
 
     vec3 color;
     if(player == 1) {
-        vec4 text = texture(texture_diffuse1, TexCoords);
-        color = vec3(text.x, text.y, text.z);
+        color = vec3(0.2);
     } else {
         color = vec3(0.7);
     }
