@@ -152,11 +152,16 @@ int main(int argc, char** argv){
 
     physics_world = PhysicsWorld_create();
 
-    if (!Shader_load(&shader, "/home/killian/Projects/C/CherryEngine/resources/shaders/test.vs", "/home/killian/Projects/C/CherryEngine/resources/shaders/test.fs")) {
+    if (!Shader_load(&shader, "/home/killian/Projects/C/CherryEngine/resources/shaders/model.vs", "/home/killian/Projects/C/CherryEngine/resources/shaders/model.fs")) {
         LOG("Erreur de chargement des shaders");
     }
 
-    vec3s lightDirection = {0.403945,0.868481,0.287348};
+    Shader cubeShader;
+    if (!Shader_load(&cubeShader, "/home/killian/Projects/C/CherryEngine/resources/shaders/test.vs", "/home/killian/Projects/C/CherryEngine/resources/shaders/test.fs")) {
+        LOG("Erreur de chargement des shaders");
+    }
+
+    vec3s lightDirection = {0.403945,0.868481,-0.287348};
 
     physicsObject = PhysicsWorld_addObject(&physics_world);
     physicsObject->PhysicsTag = PLAYER;
@@ -170,6 +175,9 @@ int main(int argc, char** argv){
 
     vec2s textureSize;
     unsigned int texture = TextureFromFile("/home/killian/Projects/C/CherryEngine/resources/images/chat02.png",false,&textureSize);
+
+    Model model = Model_create("/home/killian/Projects/C/CherryEngine/resources/models/test.obj",false);
+
 
     float timeCheck = 0.0;
     int nbFrames = 0;
@@ -202,35 +210,56 @@ int main(int argc, char** argv){
 
         Component_PlayerController_Update(player_controller, &game_object, deltaTime);
 
-        // Commun pour tout les models
+        // 1. On calcule la matrice de vue une seule fois par frame (optimisation)
         mat4s view = Camera_getViewMatrix(&camera);
-        Shader_use(&shader);
-        Shader_setVec3(&shader, "lightDirection", lightDirection);
-        Shader_setVec3(&shader, "viewPos", camera.position);
-        Shader_setFloat(&shader, "uTime", (float)glfwGetTime());
-        Shader_setMat4(&shader, "view", view);
-        Shader_setMat4(&shader, "projection", perspective);
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture);
-        glUniform1i(glGetUniformLocation(shader.shaderID, "texture_diffuse1"), 0);
-
-        // Affichage du model cible
+        // 2. Boucle de rendu
         for (int i = 0; i < physics_world.numPhysicsObjects; i++) {
-            mat4s tMatrix = glms_translate(glms_mat4_identity(), physics_world.physicsObjects[i].Transform.position);
-            if (physics_world.physicsObjects[i].Collider->type == CUBE) {
-                BoxCollider* col = physics_world.physicsObjects[i].Collider->collider;
-                tMatrix = glms_scale(tMatrix, glms_vec3_scale(col->HalfSize,2.0f));
-            }
-            Shader_setMat4(&shader, "model", tMatrix);
-            if (physics_world.physicsObjects[i].PhysicsTag == PLAYER) {
+            PhysicsObject* obj = &physics_world.physicsObjects[i];
+
+            if (obj->PhysicsTag == PLAYER) {
+                // Calcul de la matrice Model (commune au cube et au modèle)
+                mat4s tMatrix = glms_translate(glms_mat4_identity(), obj->Transform.position);
+                if (obj->Collider->type == CUBE) {
+                    BoxCollider* col = obj->Collider->collider;
+                    // J'utilise 2.0f car HalfSize est... la moitié. 2.0f redonne la taille réelle.
+                    tMatrix = glms_scale(tMatrix, glms_vec3_scale(col->HalfSize, 0.15f));
+                }
+
+                // --- RENDU DU MODÈLE (PLAYER) ---
+                Shader_use(&shader); // TOUJOURS appeler Shader_use AVANT les Shader_set
+
+                Shader_setMat4(&shader, "projection", perspective);
+                Shader_setMat4(&shader, "view", view);
+                Shader_setMat4(&shader, "model", tMatrix);
+
+                Shader_setVec3(&shader, "lightDirection", lightDirection);
+                Shader_setVec3(&shader, "viewPos", camera.position);
                 Shader_setBool(&shader, "player", true);
+
+                Model_Draw(&model, &shader);
             }
             else {
-                Shader_setBool(&shader, "player", false);
+                // Calcul de la matrice Model (commune au cube et au modèle)
+                mat4s tMatrix = glms_translate(glms_mat4_identity(), obj->Transform.position);
+                if (obj->Collider->type == CUBE) {
+                    BoxCollider* col = obj->Collider->collider;
+                    // J'utilise 2.0f car HalfSize est... la moitié. 2.0f redonne la taille réelle.
+                    tMatrix = glms_scale(tMatrix, glms_vec3_scale(col->HalfSize, 2.0f));
+                }
 
+                // --- RENDU DU CUBE SIMPLE (AUTRES) ---
+                Shader_use(&cubeShader);
+
+                Shader_setMat4(&cubeShader, "projection", perspective);
+                Shader_setMat4(&cubeShader, "view", view);
+                Shader_setMat4(&cubeShader, "model", tMatrix);
+
+                Shader_setVec3(&cubeShader, "lightDirection", lightDirection);
+                Shader_setBool(&cubeShader, "player", false);
+
+                Shape_draw(&cube);
             }
-            Shape_draw(&cube);
         }
 
         timeCheck += deltaTime;

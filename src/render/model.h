@@ -12,9 +12,13 @@
 #include <assimp/postprocess.h>
 #include "mesh.h"
 
+#define MAX_TEXTURES_PER_MODEL 16
+
 typedef struct Model_t {
     Texture* texture_loaded;
+    unsigned int numTexturesLoaded;
     Mesh* meshes;
+    unsigned int numMeshes;
     char* directory;
     bool gammaCorrection;
     char* filepath;
@@ -26,6 +30,6 @@ void Model_Draw(Model* model, Shader* shader);
 void Model_load(Model* model, char* path);
 void Model_processNode(Model* model, struct aiNode* node, struct aiScene* scene);
 Mesh Model_processMesh(Model* model, struct aiMesh* mesh, struct aiScene* scene);
-Texture* Model_loadMaterialTextures(Model* model, struct aiMaterial* material, enum aiTextureType type, char* typeName);
+Texture* Model_loadMaterialTextures(Model* model, struct aiMaterial* material, enum aiTextureType type, char* typeName, unsigned int* count);
 
 #endif //CHERRYENGINE_MODEL_H
