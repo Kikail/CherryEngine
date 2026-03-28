@@ -11,6 +11,7 @@ uniform vec3 lightDirection;
 uniform float uTime;
 uniform int player;
 
+uniform sampler2D texture_diffuse1;
 
 void main()
 {
@@ -18,7 +19,8 @@ void main()
 
     vec3 color;
     if(player == 1) {
-        color = vec3(abs(cos(uTime)), abs(sin(uTime)), 0.0);
+        vec4 text = texture(texture_diffuse1, TexCoords);
+        color = vec3(text.x, text.y, text.z);
     } else {
         color = vec3(0.7);
     }

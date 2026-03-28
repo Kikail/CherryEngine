@@ -16,6 +16,7 @@
 #include "editor/ecs/gameObject.h"
 #include "physics/physicsWorld.h"
 #include "render/camera.h"
+#include "render/model.h"
 #include "render/shader.h"
 
 static PhysicsWorld physics_world;
@@ -167,6 +168,8 @@ int main(int argc, char** argv){
     PlayerController* player_controller = GameObject_GetComponent(&game_object, &component_pool, COMPONENT_PLAYER_CONTROLLER);
     Component_PlayerController_Init(player_controller, physicsObject, &camera, window);
 
+    vec2s textureSize;
+    unsigned int texture = TextureFromFile("/home/killian/Projects/C/CherryEngine/resources/images/chat02.png",false,&textureSize);
 
     float timeCheck = 0.0;
     int nbFrames = 0;
@@ -208,12 +211,16 @@ int main(int argc, char** argv){
         Shader_setMat4(&shader, "view", view);
         Shader_setMat4(&shader, "projection", perspective);
 
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glUniform1i(glGetUniformLocation(shader.shaderID, "texture_diffuse1"), 0);
+
         // Affichage du model cible
         for (int i = 0; i < physics_world.numPhysicsObjects; i++) {
             mat4s tMatrix = glms_translate(glms_mat4_identity(), physics_world.physicsObjects[i].Transform.position);
             if (physics_world.physicsObjects[i].Collider->type == CUBE) {
                 BoxCollider* col = physics_world.physicsObjects[i].Collider->collider;
-                tMatrix = glms_scale(tMatrix, glms_vec3_scale(col->HalfSize,2.0));
+                tMatrix = glms_scale(tMatrix, glms_vec3_scale(col->HalfSize,2.0f));
             }
             Shader_setMat4(&shader, "model", tMatrix);
             if (physics_world.physicsObjects[i].PhysicsTag == PLAYER) {
