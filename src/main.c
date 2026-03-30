@@ -25,123 +25,150 @@ static bool firstMouse = true;
 static Camera camera;
 static float lastX, lastY;
 
-PhysicsObject* physicsObject;
+static PhysicsObject* physicsObject = NULL;
 
-Shader shader;
-bool onceKey = true;
-bool onceMouse = true;
-bool captureMouse = true;
+static Shader shader;
+static bool onceKey = true;
+static bool onceMouse = true;
+static bool captureMouse = true;
 
-void processInput(Camera* camera, float deltaTime, GLFWwindow *window)
+#define WIDTH  1920
+#define HEIGHT 1080
+
+static void cleanup(GLFWwindow* window)
 {
+    PhysicsWorld_destroy(&physics_world);
+
+    if (window) {
+        glfwDestroyWindow(window);
+    }
+    glfwTerminate();
+}
+
+void processInput(Camera* camera, float deltaTime, GLFWwindow* window)
+{
+    (void)camera;
+    (void)deltaTime;
+
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
-    /*
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        Camera_processKeyboard(camera, FORWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        Camera_processKeyboard(camera, BACKWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        Camera_processKeyboard(camera, LEFT, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        Camera_processKeyboard(camera, RIGHT, deltaTime);
-    */
-    if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS)
-        PhysicsWorld_addObject(&physics_world);
-    if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS)
-        PhysicsWorld_impulse(&physics_world, deltaTime, physicsObject->Transform.position, 70, 12);
+
+    if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {
+        PhysicsObject* obj = PhysicsWorld_addObject(&physics_world);
+        if (!obj) {
+            LOG("PhysicsWorld_addObject a echoue");
+        }
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS) {
+        if (physicsObject) {
+            PhysicsWorld_explosion(&physics_world, physicsObject->Transform.position, 70.0f, 12.0f);
+        }
+    }
 
     if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS) {
-        if (!onceMouse)return;
+        if (!onceMouse) return;
         onceMouse = false;
-        captureMouse = (captureMouse) ? false : true;
-        if (captureMouse) {
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        }
-        else {
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        }
+
+        captureMouse = !captureMouse;
+        glfwSetInputMode(window, GLFW_CURSOR,
+            captureMouse ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+
         LOG(captureMouse ? "capture true" : "capture false");
-    }
-    else {
+    } else {
         onceMouse = true;
     }
 
     if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS) {
-        if (!onceKey)return;
+        if (!onceKey) return;
         onceKey = false;
+
         Shader loaded;
         LOG("CHARGEMENT DES SHADERS...");
-        if (!Shader_load(&loaded, "/home/killian/Projects/C/CherryEngine/resources/shaders/test.vs", "/home/killian/Projects/C/CherryEngine/resources/shaders/test.fs")) {
+        if (!Shader_load(&loaded,
+                "/home/killian/Projects/C/CherryEngine/resources/shaders/test.vs",
+                "/home/killian/Projects/C/CherryEngine/resources/shaders/test.fs")) {
             LOG("Erreur de chargement des shaders");
-        }
-        else {
+        } else {
             shader = loaded;
         }
-    }
-    else {
+    } else {
         onceKey = true;
     }
 }
 
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
 {
-    float xpos = (float)(xposIn);
-    float ypos = (float)(yposIn);
-    if (firstMouse) { lastX = xpos; lastY = ypos; firstMouse = false; }
+    (void)window;
+
+    float xpos = (float)xposIn;
+    float ypos = (float)yposIn;
+
+    if (firstMouse) {
+        lastX = xpos;
+        lastY = ypos;
+        firstMouse = false;
+    }
 
     float xoffset = xpos - lastX;
     float yoffset = lastY - ypos;
     lastX = xpos;
     lastY = ypos;
+
     if (captureMouse) {
         Camera_processMouseMovement(&camera, xoffset, yoffset);
     }
 }
 
-#define WIDTH 1920.0f
-#define HEIGHT 1080.0f
-
-int main(int argc, char** argv){
-    srand(time(NULL));
+int main(int argc, char** argv)
+{
+    srand((unsigned int)time(NULL));
 
     ComponentPool component_pool = ComponentPool_Create();
 
+    // Caméra
+    camera = Camera_createCamera(
+        glms_vec3_zero(),
+        (vec3s)VECTOR_UP,
+        (vec3s)VECTOR_FRONT,
+        CAMERA_YAW,
+        CAMERA_PITCH,
+        CAMERA_SPEED,
+        CAMERA_SENSIVITY,
+        CAMERA_ZOOM
+    );
 
-    // Creation d'une camera
-    camera = Camera_createCamera(glms_vec3_zero(),(vec3s)VECTOR_UP,(vec3s)VECTOR_FRONT,CAMERA_YAW, CAMERA_PITCH,CAMERA_SPEED,CAMERA_SENSIVITY,CAMERA_ZOOM);
-
-    // Chargement du resource path du projet
-    //char* path = RESOURCES_PATH;
-    //strcat(path,"/");
-
-    // Typiquement dans ton main.c ou ta classe Camera
-    float aspect = WIDTH / HEIGHT; // Largeur / Hauteur
-    float fov = glm_rad(45.0f);     // Champ de vision de 45 degrés converti en radians
+    float aspect = (float)WIDTH / (float)HEIGHT;
+    float fov = glm_rad(45.0f);
     mat4s perspective = glms_perspective(fov, aspect, 0.1f, 100.0f);
 
-    // --------- GLFW init ---------
-    glfwInit();
+    // GLFW init
+    if (!glfwInit()) {
+        LOG("Failed to initialize GLFW");
+        return EXIT_FAILURE;
+    }
+
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
     GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "CherryEngine", NULL, NULL);
-    if (window == NULL)
-    {
+    if (window == NULL) {
         LOG("Failed to create GLFW window");
         glfwTerminate();
-        return false;
+        return EXIT_FAILURE;
     }
+
     glfwMakeContextCurrent(window);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    glfwSetWindowUserPointer(window, NULL);
     glfwSetCursorPosCallback(window, mouse_callback);
-    // --------- GLAD init ---------
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-    {
+
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         LOG("Erreur de Init Glad");
-        return false;
+        cleanup(window);
+        return EXIT_FAILURE;
     }
+
     glEnable(GL_DEPTH_TEST);
 
     float deltaTime = 0.0f;
@@ -150,106 +177,118 @@ int main(int argc, char** argv){
 
     Shape cube = Shape_create(SHAPE_CUBE);
 
-    physics_world = PhysicsWorld_create();
+    // CORRECTION : Initialisation par pointeur sur la variable globale
+    PhysicsWorld_init(&physics_world);
 
-    if (!Shader_load(&shader, "/home/killian/Projects/C/CherryEngine/resources/shaders/model.vs", "/home/killian/Projects/C/CherryEngine/resources/shaders/model.fs")) {
+    if (!Shader_load(&shader,
+            "/home/killian/Projects/C/CherryEngine/resources/shaders/model.vs",
+            "/home/killian/Projects/C/CherryEngine/resources/shaders/model.fs")) {
         LOG("Erreur de chargement des shaders");
     }
 
     Shader cubeShader;
-    if (!Shader_load(&cubeShader, "/home/killian/Projects/C/CherryEngine/resources/shaders/test.vs", "/home/killian/Projects/C/CherryEngine/resources/shaders/test.fs")) {
+    if (!Shader_load(&cubeShader,
+            "/home/killian/Projects/C/CherryEngine/resources/shaders/test.vs",
+            "/home/killian/Projects/C/CherryEngine/resources/shaders/test.fs")) {
         LOG("Erreur de chargement des shaders");
     }
 
-    vec3s lightDirection = {0.403945,0.868481,-0.287348};
+    vec3s lightDirection = {0.403945f, 0.868481f, -0.287348f};
 
     physicsObject = PhysicsWorld_addObject(&physics_world);
-    physicsObject->PhysicsTag = PLAYER;
+    if (!physicsObject) {
+        LOG("Impossible de creer l'objet physique joueur");
+        cleanup(window);
+        return EXIT_FAILURE;
+    }
+    physicsObject->PhysicsTag = PHYS_TAG_PLAYER;
 
     GameObject game_object = GameObject_Create();
     if (!GameObject_AddComponent(&game_object, &component_pool, COMPONENT_PLAYER_CONTROLLER)) {
         LOG("ERROR ADDING PLAYER CONTROLLER");
+        cleanup(window);
+        return EXIT_FAILURE;
     }
-    PlayerController* player_controller = GameObject_GetComponent(&game_object, &component_pool, COMPONENT_PLAYER_CONTROLLER);
+
+    PlayerController* player_controller =
+        GameObject_GetComponent(&game_object, &component_pool, COMPONENT_PLAYER_CONTROLLER);
+
+    if (!player_controller) {
+        LOG("PlayerController introuvable");
+        cleanup(window);
+        return EXIT_FAILURE;
+    }
+
     Component_PlayerController_Init(player_controller, physicsObject, &camera, window);
 
-    vec2s textureSize;
-    unsigned int texture = TextureFromFile("/home/killian/Projects/C/CherryEngine/resources/images/chat02.png",false,&textureSize);
+    Model model = Model_create(
+        "/home/killian/Projects/C/CherryEngine/resources/models/test.obj",
+        false
+    );
 
-    Model model = Model_create("/home/killian/Projects/C/CherryEngine/resources/models/test.obj",false);
-
-
-    float timeCheck = 0.0;
+    float timeCheck = 0.0f;
     int nbFrames = 0;
+
     while (!glfwWindowShouldClose(window)) {
-        glClearColor(0.6f,0.6f,0.6f,0.0f);
+        glClearColor(0.6f, 0.6f, 0.6f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         currentFrame = (float)glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        if (timeCheck >= 1.0) {
+        if (timeCheck >= 1.0f) {
             char title[128];
-            // Calcul du temps moyen par frame (ms) et des FPS
-            double msPerFrame = 1000.0 / (double)nbFrames;
+            double msPerFrame = (nbFrames > 0) ? (1000.0 / (double)nbFrames) : 0.0;
             sprintf(title, "CherryEngine - [FPS: %d | %.2f ms]", nbFrames, msPerFrame);
-
-            // Mise à jour du titre de la fenêtre
             glfwSetWindowTitle(window, title);
 
-            timeCheck = 0.0;
+            timeCheck = 0.0f;
             nbFrames = 0;
         }
 
-        // Update de la physique
         PhysicsWorld_step(&physics_world, deltaTime);
-
-        // Ici on fait ce qu'on veut
         processInput(&camera, deltaTime, window);
 
-        Component_PlayerController_Update(player_controller, &game_object, deltaTime);
+        if (player_controller) {
+            Component_PlayerController_Update(player_controller, &game_object, deltaTime);
+        }
 
-        // 1. On calcule la matrice de vue une seule fois par frame (optimisation)
         mat4s view = Camera_getViewMatrix(&camera);
-        // 2. Boucle de rendu
+
         for (int i = 0; i < physics_world.numPhysicsObjects; i++) {
             PhysicsObject* obj = &physics_world.physicsObjects[i];
+            if (!obj->Collider) continue;
 
-            // --- CALCUL DE LA MATRICE MODEL AVEC ROTATION ---
-            // 1. Translation
             mat4s translation = glms_translate(glms_mat4_identity(), obj->Transform.position);
-
-            // 2. Rotation (On transforme le quaternion Orientation en matrice 4x4)
             mat4s rotation = glms_quat_mat4(obj->Orientation);
 
-            // 3. Scale (On récupère la taille du collider)
             mat4s scale = glms_mat4_identity();
-            if (obj->Collider->type == CUBE) {
-                BoxCollider* col = obj->Collider->collider;
-                // Si c'est un objet dynamique (ex: tes modèles), on scale différemment
-                float scaleFactor = (obj->PhysicsType == STATIC) ? 2.0f : 0.1f;
-                scale = glms_scale(glms_mat4_identity(), glms_vec3_scale(col->HalfSize, scaleFactor));
+            if (obj->Collider->type == COLLIDER_CUBE) {
+                BoxCollider* col = (BoxCollider*)obj->Collider->collider;
+                if (col) {
+                    float scaleFactor = (obj->PhysicsType == PHYS_STATIC) ? 2.0f : 0.1f;
+                    scale = glms_scale(glms_mat4_identity(),
+                        glms_vec3_scale(col->HalfSize, scaleFactor));
+                }
             }
 
-            // Combinaison : Model = T * R * S
             mat4s modelMatrix = glms_mat4_mul(translation, glms_mat4_mul(rotation, scale));
 
-            if (obj->PhysicsType == STATIC) {
+            if (obj->PhysicsType == PHYS_STATIC) {
                 Shader_use(&cubeShader);
                 Shader_setMat4(&cubeShader, "projection", perspective);
                 Shader_setMat4(&cubeShader, "view", view);
-                Shader_setMat4(&cubeShader, "model", modelMatrix); // Utilisation de la nouvelle matrice
+                Shader_setMat4(&cubeShader, "model", modelMatrix);
                 Shader_setVec3(&cubeShader, "lightDirection", lightDirection);
                 Shape_draw(&cube);
-            }
-            else {
-                if (obj->PhysicsTag == PLAYER) continue;
+            } else {
+                if (obj->PhysicsTag == PHYS_TAG_PLAYER) continue;
 
                 Shader_use(&shader);
                 Shader_setMat4(&shader, "projection", perspective);
                 Shader_setMat4(&shader, "view", view);
-                Shader_setMat4(&shader, "model", modelMatrix); // Utilisation de la nouvelle matrice
+                Shader_setMat4(&shader, "model", modelMatrix);
                 Shader_setVec3(&shader, "lightDirection", lightDirection);
                 Model_Draw(&model, &shader);
             }
@@ -262,8 +301,6 @@ int main(int argc, char** argv){
         glfwPollEvents();
     }
 
-    // Ici on clean tout
-    glfwDestroyWindow(window);
-
+    cleanup(window);
     return EXIT_SUCCESS;
 }
