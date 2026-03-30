@@ -32,13 +32,27 @@ static bool onceKey = true;
 static bool onceMouse = true;
 static bool captureMouse = true;
 
-#define WIDTH  1920
-#define HEIGHT 1080
+#define WIDTH  1280
+#define HEIGHT 720
+
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+
+static char* GetPath(const char* file) {
+    // Calculer la taille nécessaire pour le chemin final
+    size_t pathLen = strlen(RESOURCES_PATH) + 1 + strlen(file) + 1;
+    char* finalPath = malloc(pathLen);
+    if (finalPath == NULL) {
+        perror("Erreur d'allocation mémoire");
+        return NULL;
+    }
+    snprintf(finalPath, pathLen, "%s/%s", RESOURCES_PATH, file);
+    return finalPath;
+}
 
 static void cleanup(GLFWwindow* window)
 {
-    PhysicsWorld_destroy(&physics_world);
-
     if (window) {
         glfwDestroyWindow(window);
     }
@@ -59,13 +73,9 @@ void processInput(Camera* camera, float deltaTime, GLFWwindow* window)
             LOG("PhysicsWorld_addObject a echoue");
         }
     }
-
     if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS) {
-        if (physicsObject) {
-            PhysicsWorld_explosion(&physics_world, physicsObject->Transform.position, 70.0f, 12.0f);
-        }
+        PhysicsWorld_explosion(&physics_world, physicsObject->Transform.position, 10, 10);
     }
-
     if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS) {
         if (!onceMouse) return;
         onceMouse = false;
@@ -86,8 +96,8 @@ void processInput(Camera* camera, float deltaTime, GLFWwindow* window)
         Shader loaded;
         LOG("CHARGEMENT DES SHADERS...");
         if (!Shader_load(&loaded,
-                "/home/killian/Projects/C/CherryEngine/resources/shaders/test.vs",
-                "/home/killian/Projects/C/CherryEngine/resources/shaders/test.fs")) {
+                GetPath("shaders/test.vs"),
+                GetPath("shaders/test.fs") )) {
             LOG("Erreur de chargement des shaders");
         } else {
             shader = loaded;
@@ -178,18 +188,24 @@ int main(int argc, char** argv)
     Shape cube = Shape_create(SHAPE_CUBE);
 
     // CORRECTION : Initialisation par pointeur sur la variable globale
-    PhysicsWorld_init(&physics_world);
+    physics_world = PhysicsWorld_create();
+
+    printf("%s\n",GetPath("shaders/model.vs"));
+
+
 
     if (!Shader_load(&shader,
-            "/home/killian/Projects/C/CherryEngine/resources/shaders/model.vs",
-            "/home/killian/Projects/C/CherryEngine/resources/shaders/model.fs")) {
+                GetPath("shaders/model.vs"),
+                GetPath("shaders/model.fs") )) {
         LOG("Erreur de chargement des shaders");
     }
 
+
+
     Shader cubeShader;
     if (!Shader_load(&cubeShader,
-            "/home/killian/Projects/C/CherryEngine/resources/shaders/test.vs",
-            "/home/killian/Projects/C/CherryEngine/resources/shaders/test.fs")) {
+                GetPath("shaders/test.vs"),
+                GetPath("shaders/test.fs") )) {
         LOG("Erreur de chargement des shaders");
     }
 
@@ -201,7 +217,7 @@ int main(int argc, char** argv)
         cleanup(window);
         return EXIT_FAILURE;
     }
-    physicsObject->PhysicsTag = PHYS_TAG_PLAYER;
+    physicsObject->PhysicsTag = PLAYER;
 
     GameObject game_object = GameObject_Create();
     if (!GameObject_AddComponent(&game_object, &component_pool, COMPONENT_PLAYER_CONTROLLER)) {
@@ -222,7 +238,7 @@ int main(int argc, char** argv)
     Component_PlayerController_Init(player_controller, physicsObject, &camera, window);
 
     Model model = Model_create(
-        "/home/killian/Projects/C/CherryEngine/resources/models/test.obj",
+        GetPath("models/test.obj"),
         false
     );
 
@@ -261,21 +277,24 @@ int main(int argc, char** argv)
             if (!obj->Collider) continue;
 
             mat4s translation = glms_translate(glms_mat4_identity(), obj->Transform.position);
-            mat4s rotation = glms_quat_mat4(obj->Orientation);
+
 
             mat4s scale = glms_mat4_identity();
-            if (obj->Collider->type == COLLIDER_CUBE) {
+            if (obj->Collider->type == CUBE) {
                 BoxCollider* col = (BoxCollider*)obj->Collider->collider;
                 if (col) {
-                    float scaleFactor = (obj->PhysicsType == PHYS_STATIC) ? 2.0f : 0.1f;
+                    float scaleFactor = (obj->PhysicsType == STATIC) ? 2.0f : 0.1f;
                     scale = glms_scale(glms_mat4_identity(),
                         glms_vec3_scale(col->HalfSize, scaleFactor));
                 }
             }
 
-            mat4s modelMatrix = glms_mat4_mul(translation, glms_mat4_mul(rotation, scale));
+            mat4s modelMatrix = glms_translate(glms_mat4_identity(), physics_world.physicsObjects[i].Transform.position);
 
-            if (obj->PhysicsType == PHYS_STATIC) {
+            BoxCollider* col = (BoxCollider*)obj->Collider->collider;
+
+            if (obj->PhysicsType == STATIC) {
+                modelMatrix = glms_scale(modelMatrix, glms_vec3_scale(col->HalfSize, 2.0));
                 Shader_use(&cubeShader);
                 Shader_setMat4(&cubeShader, "projection", perspective);
                 Shader_setMat4(&cubeShader, "view", view);
@@ -283,8 +302,9 @@ int main(int argc, char** argv)
                 Shader_setVec3(&cubeShader, "lightDirection", lightDirection);
                 Shape_draw(&cube);
             } else {
-                if (obj->PhysicsTag == PHYS_TAG_PLAYER) continue;
-
+                if (obj->PhysicsTag == PLAYER)continue;
+                float scale = 0.05f;
+                modelMatrix = glms_scale(modelMatrix, (vec3s){scale,scale,scale});
                 Shader_use(&shader);
                 Shader_setMat4(&shader, "projection", perspective);
                 Shader_setMat4(&shader, "view", view);
@@ -300,6 +320,7 @@ int main(int argc, char** argv)
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
+
 
     cleanup(window);
     return EXIT_SUCCESS;
