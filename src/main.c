@@ -26,6 +26,7 @@ static Camera camera;
 static float lastX, lastY;
 
 static PhysicsObject* physicsObject = NULL;
+int nbPhysicsObjects = 0;
 
 static Shader shader;
 static bool onceKey = true;
@@ -69,9 +70,8 @@ void processInput(Camera* camera, float deltaTime, GLFWwindow* window)
 
     if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {
         PhysicsObject* obj = PhysicsWorld_addObject(&physics_world);
-        if (!obj) {
-            LOG("PhysicsWorld_addObject a echoue");
-        }
+        nbPhysicsObjects += 1;
+        printf("%d\n", nbPhysicsObjects);
     }
     if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS) {
         PhysicsWorld_explosion(&physics_world, physicsObject->Transform.position, 10, 10);
@@ -192,15 +192,11 @@ int main(int argc, char** argv)
 
     printf("%s\n",GetPath("shaders/model.vs"));
 
-
-
     if (!Shader_load(&shader,
                 GetPath("shaders/model.vs"),
                 GetPath("shaders/model.fs") )) {
         LOG("Erreur de chargement des shaders");
     }
-
-
 
     Shader cubeShader;
     if (!Shader_load(&cubeShader,
@@ -302,6 +298,7 @@ int main(int argc, char** argv)
                 Shader_setVec3(&cubeShader, "lightDirection", lightDirection);
                 Shape_draw(&cube);
             } else {
+                /*
                 if (obj->PhysicsTag == PLAYER)continue;
                 float scale = 0.05f;
                 modelMatrix = glms_scale(modelMatrix, (vec3s){scale,scale,scale});
@@ -311,6 +308,7 @@ int main(int argc, char** argv)
                 Shader_setMat4(&shader, "model", modelMatrix);
                 Shader_setVec3(&shader, "lightDirection", lightDirection);
                 Model_Draw(&model, &shader);
+                */
             }
         }
 

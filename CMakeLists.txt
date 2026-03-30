@@ -85,6 +85,8 @@ add_executable(CherryEngine
         src/render/mesh.c
         src/render/model.h
         src/render/model.c
+        src/physics/octree.h
+        src/physics/octree.c
 )
 
 # Configuration de l'inclusion des headers
