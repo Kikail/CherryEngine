@@ -14,10 +14,6 @@ void Component_PlayerController_Init(PlayerController* playerController, Physics
 }
 
 void Component_PlayerController_Update(PlayerController* pc, GameObject* gameObject, float deltaTime) {
-    // --- 1. ROTATION DE LA CAMÉRA (SOURIS) ---
-    // On suppose que ta fonction de caméra gère le Yaw et le Pitch via GLFW
-    // La caméra doit mettre à jour ses vecteurs Front et Right
-
     vec3s front = pc->camera->front;
     vec3s right = pc->camera->right;
 

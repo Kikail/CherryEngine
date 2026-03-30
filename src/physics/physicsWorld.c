@@ -4,6 +4,7 @@
 #include <math.h>
 
 #include "collision.h"
+#include "octree.h"
 
 #define FRICTION_COEF 0.01f
 
@@ -52,8 +53,9 @@ PhysicsWorld PhysicsWorld_create() {
     world.numPhysicsObjects = 0;
     world.numCollisions = 0;
     world.gravity = (vec3s){0, -9.81f, 0};
+    world.debug = false;
 
-    float groundSize = 30.0f; // La moitié de 30
+    float groundSize = 50.0f; // La moitié de 30
     float wallHeight = 1.5f;  // La moitié de 3
     float wallThickness = 0.5f;
 
@@ -103,8 +105,8 @@ PhysicsObject* PhysicsWorld_addObject(PhysicsWorld *world) {
         obj->Mass = 1.0f;
 
         // Spawn aléatoire sur la surface du plateau (entre -14 et 14 pour pas tomber direct)
-        float rx = ((float)rand() / (float)RAND_MAX) * 28.0f - 14.0f;
-        float rz = ((float)rand() / (float)RAND_MAX) * 28.0f - 14.0f;
+        float rx = ((float)rand() / (float)RAND_MAX) * 90.0f - 45.0f;
+        float rz = ((float)rand() / (float)RAND_MAX) * 90.0f - 45.0f;
 
         obj->Transform.position = (vec3s){rx, 15.0f, rz};
 
@@ -196,26 +198,76 @@ void PhysicsWorld_addCollision(PhysicsWorld* world, Collision* collision) {
     }
 }
 
-void PhysicsWorld_resolveCollisions(PhysicsWorld *world, float deltaTime) {
-    world->numCollisions = 0;
+void checkNodeCollisions(PhysicsWorld* world, OctreeNode* node) {
+    if (node == NULL) return;
 
-    for (int i = 0; i < world->numPhysicsObjects; i++) {
-        // CORRECTION 1 : j = i + 1 (pour ne pas tester un objet contre lui-même)
-        for (int j = i + 1; j < world->numPhysicsObjects; j++) {
+    // Si on est dans une feuille, on teste les objets entre eux
+    if (node->isLeaf) {
+        for (unsigned int i = 0; i < node->numObjects; i++) {
+            for (unsigned int j = i + 1; j < node->numObjects; j++) {
+                PhysicsObject* objA = node->objects[i];
+                PhysicsObject* objB = node->objects[j];
 
-            // CORRECTION 2 : obj.Collider est déjà un pointeur, on enlève le '&'
-            CollisionPoints collisionPoints = Collisions_testCollisions(
-                world->physicsObjects[i].Collider, &world->physicsObjects[i].Transform,
-                world->physicsObjects[j].Collider, &world->physicsObjects[j].Transform
-            );
+                // Optimisation: Un objet dynamique qui chevauche plusieurs noeuds peut
+                // être testé plusieurs fois contre le même objet.
+                // On vérifie qu'on n'a pas déjà ajouté cette collision.
+                bool alreadyChecked = false;
+                for(int c = 0; c < world->numCollisions; c++) {
+                    if ((world->collisions[c].objectA == objA && world->collisions[c].objectB == objB) ||
+                        (world->collisions[c].objectA == objB && world->collisions[c].objectB == objA)) {
+                        alreadyChecked = true;
+                        break;
+                        }
+                }
+                if (alreadyChecked) continue;
 
-            if (collisionPoints.HasCollision) {
-                Collision collision;
-                collision.objectA = &world->physicsObjects[i];
-                collision.objectB = &world->physicsObjects[j];
-                collision.Points = collisionPoints;
-                PhysicsWorld_addCollision(world, &collision);
+                // On effectue le test de collision réel (Narrow Phase)
+                CollisionPoints collisionPoints = Collisions_testCollisions(
+                    objA->Collider, &objA->Transform,
+                    objB->Collider, &objB->Transform
+                );
+
+                if (collisionPoints.HasCollision) {
+                    Collision collision;
+                    collision.objectA = objA;
+                    collision.objectB = objB;
+                    collision.Points = collisionPoints;
+                    PhysicsWorld_addCollision(world, &collision);
+                }
             }
         }
     }
+    // Sinon, on descend dans les enfants
+    else if (node->nodes != NULL) {
+        for (int i = 0; i < 8; i++) {
+            checkNodeCollisions(world, node->nodes[i]);
+        }
+    }
+}
+
+void PhysicsWorld_resolveCollisions(PhysicsWorld *world, float deltaTime) {
+    world->numCollisions = 0;
+
+    AABB worldBounds;
+    worldBounds.min = (vec3s){-50.0f, -5.0f, -50.0f};
+    worldBounds.max = (vec3s){50.0f, 30.0f, 50.0f};
+
+    OctreeNode* root = Octree_create(worldBounds, 20, 6);
+
+    for (int i = 0; i < world->numPhysicsObjects; i++) {
+        Octree_addElement(root, &world->physicsObjects[i]);
+    }
+
+    checkNodeCollisions(world, root);
+
+    if (world->debug && world->debugShader!=NULL) {
+        Octree_draw(root, world->debugShader);
+    }
+
+    Octree_clean(root);
+}
+
+void PhysicsWorld_afficherOctree(PhysicsWorld *world, bool b, Shader* shader) {
+    world->debug = b;
+    world->debugShader = shader;
 }

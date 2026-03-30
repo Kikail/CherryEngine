@@ -96,7 +96,7 @@ bool Octree_addElement(OctreeNode* node, PhysicsObject* object) {
     if (node->isLeaf) {
         // On verifie deja si on depasse pas la taille max
         if (node->numObjects < node->maxElements) {
-            node->objects[node->numObjects] = *object;
+            node->objects[node->numObjects] = object;
             node->numObjects += 1;
             return true;
         }
@@ -106,14 +106,14 @@ bool Octree_addElement(OctreeNode* node, PhysicsObject* object) {
                 Octree_subdivide(node);
 
                 // On sauvegarde et nettoie
-                PhysicsObject* oldObjects = node->objects;
+                PhysicsObject** oldObjects = node->objects;
                 unsigned int count = node->numObjects;
                 node->objects = NULL;
                 node->numObjects = 0;
 
                 // On ajoute tout les elements dans les enfants
                 for (unsigned int i = 0; i < count; i++) {
-                    Octree_addElement(node, &oldObjects[i]);
+                    Octree_addElement(node, oldObjects[i]);
                 }
                 Octree_addElement(node, object);
 

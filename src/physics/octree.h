@@ -20,7 +20,7 @@ typedef struct OctreeNode_t {
     AABB aabb;
 
     unsigned int maxElements;
-    PhysicsObject* objects;
+    PhysicsObject** objects;
     unsigned int numObjects;
 
     struct OctreeNode_t** nodes;

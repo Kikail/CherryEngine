@@ -33,8 +33,8 @@ static bool onceKey = true;
 static bool onceMouse = true;
 static bool captureMouse = true;
 
-#define WIDTH  1280
-#define HEIGHT 720
+#define WIDTH  1920
+#define HEIGHT 1080
 
 #include <stdlib.h>
 #include <string.h>
@@ -150,7 +150,7 @@ int main(int argc, char** argv)
 
     float aspect = (float)WIDTH / (float)HEIGHT;
     float fov = glm_rad(45.0f);
-    mat4s perspective = glms_perspective(fov, aspect, 0.1f, 100.0f);
+    mat4s perspective = glms_perspective(fov, aspect, 0.1f, 150.0f);
 
     // GLFW init
     if (!glfwInit()) {
@@ -160,7 +160,7 @@ int main(int argc, char** argv)
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
 
     GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "CherryEngine", NULL, NULL);
     if (window == NULL) {
@@ -215,6 +215,14 @@ int main(int argc, char** argv)
     }
     physicsObject->PhysicsTag = PLAYER;
 
+    Shader debugShader;
+    if (!Shader_load(&debugShader,
+                GetPath("shaders/debug.vs"),
+                GetPath("shaders/debug.fs") )) {
+        LOG("Erreur de chargement des shaders");
+    }
+    PhysicsWorld_afficherOctree(&physics_world, true, &debugShader);
+
     GameObject game_object = GameObject_Create();
     if (!GameObject_AddComponent(&game_object, &component_pool, COMPONENT_PLAYER_CONTROLLER)) {
         LOG("ERROR ADDING PLAYER CONTROLLER");
@@ -259,14 +267,18 @@ int main(int argc, char** argv)
             nbFrames = 0;
         }
 
+        mat4s view = Camera_getViewMatrix(&camera);
+
+        // On debug l
+        Shader_use(&debugShader);
+        Shader_setMat4(&debugShader, "projection", perspective);
+        Shader_setMat4(&debugShader, "view", view);
         PhysicsWorld_step(&physics_world, deltaTime);
         processInput(&camera, deltaTime, window);
 
         if (player_controller) {
             Component_PlayerController_Update(player_controller, &game_object, deltaTime);
         }
-
-        mat4s view = Camera_getViewMatrix(&camera);
 
         for (int i = 0; i < physics_world.numPhysicsObjects; i++) {
             PhysicsObject* obj = &physics_world.physicsObjects[i];
@@ -298,7 +310,7 @@ int main(int argc, char** argv)
                 Shader_setVec3(&cubeShader, "lightDirection", lightDirection);
                 Shape_draw(&cube);
             } else {
-                /*
+
                 if (obj->PhysicsTag == PLAYER)continue;
                 float scale = 0.05f;
                 modelMatrix = glms_scale(modelMatrix, (vec3s){scale,scale,scale});
@@ -308,7 +320,7 @@ int main(int argc, char** argv)
                 Shader_setMat4(&shader, "model", modelMatrix);
                 Shader_setVec3(&shader, "lightDirection", lightDirection);
                 Model_Draw(&model, &shader);
-                */
+
             }
         }
 
