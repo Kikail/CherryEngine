@@ -19,7 +19,7 @@
 #include "render/model.h"
 #include "render/shader.h"
 
-static PhysicsWorld physics_world;
+static PhysicsWorld* physics_world;
 
 static bool firstMouse = true;
 static Camera camera;
@@ -68,13 +68,9 @@ void processInput(Camera* camera, float deltaTime, GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
-    if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {
-        PhysicsObject* obj = PhysicsWorld_addObject(&physics_world);
-        nbPhysicsObjects += 1;
-        printf("%d\n", nbPhysicsObjects);
-    }
+
     if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS) {
-        PhysicsWorld_explosion(&physics_world, physicsObject->Transform.position, 10, 10);
+        PhysicsWorld_explosion(physics_world, physicsObject->Transform.position, 10, 10);
     }
     if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS) {
         if (!onceMouse) return;
@@ -150,7 +146,7 @@ int main(int argc, char** argv)
 
     float aspect = (float)WIDTH / (float)HEIGHT;
     float fov = glm_rad(45.0f);
-    mat4s perspective = glms_perspective(fov, aspect, 0.1f, 150.0f);
+    mat4s perspective = glms_perspective(fov, aspect, 0.1f, 300.0f);
 
     // GLFW init
     if (!glfwInit()) {
@@ -207,7 +203,7 @@ int main(int argc, char** argv)
 
     vec3s lightDirection = {0.403945f, 0.868481f, -0.287348f};
 
-    physicsObject = PhysicsWorld_addObject(&physics_world);
+    physicsObject = PhysicsWorld_addObject(physics_world);
     if (!physicsObject) {
         LOG("Impossible de creer l'objet physique joueur");
         cleanup(window);
@@ -221,7 +217,7 @@ int main(int argc, char** argv)
                 GetPath("shaders/debug.fs") )) {
         LOG("Erreur de chargement des shaders");
     }
-    PhysicsWorld_afficherOctree(&physics_world, true, &debugShader);
+    PhysicsWorld_afficherOctree(physics_world, true, &debugShader);
 
     GameObject game_object = GameObject_Create();
     if (!GameObject_AddComponent(&game_object, &component_pool, COMPONENT_PLAYER_CONTROLLER)) {
@@ -249,6 +245,13 @@ int main(int argc, char** argv)
     float timeCheck = 0.0f;
     int nbFrames = 0;
 
+    for (int i = 0; i < PHYSICS_MAX_OBJECTS; i++) {
+        PhysicsObject* obj = PhysicsWorld_addObject(physics_world);
+        nbPhysicsObjects += 1;
+        if (i%100 == 0)
+            printf("%d\n", nbPhysicsObjects);
+    }
+
     while (!glfwWindowShouldClose(window)) {
         glClearColor(0.6f, 0.6f, 0.6f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -269,19 +272,20 @@ int main(int argc, char** argv)
 
         mat4s view = Camera_getViewMatrix(&camera);
 
-        // On debug l
+        // Ce bloc calcule la physique
         Shader_use(&debugShader);
         Shader_setMat4(&debugShader, "projection", perspective);
         Shader_setMat4(&debugShader, "view", view);
-        PhysicsWorld_step(&physics_world, deltaTime);
+        PhysicsWorld_step(physics_world, deltaTime);
+
         processInput(&camera, deltaTime, window);
 
         if (player_controller) {
             Component_PlayerController_Update(player_controller, &game_object, deltaTime);
         }
 
-        for (int i = 0; i < physics_world.numPhysicsObjects; i++) {
-            PhysicsObject* obj = &physics_world.physicsObjects[i];
+        for (int i = 0; i < physics_world->numPhysicsObjects; i++) {
+            PhysicsObject* obj = &physics_world->physicsObjects[i];
             if (!obj->Collider) continue;
 
             mat4s translation = glms_translate(glms_mat4_identity(), obj->Transform.position);
@@ -297,7 +301,7 @@ int main(int argc, char** argv)
                 }
             }
 
-            mat4s modelMatrix = glms_translate(glms_mat4_identity(), physics_world.physicsObjects[i].Transform.position);
+            mat4s modelMatrix = glms_translate(glms_mat4_identity(), physics_world->physicsObjects[i].Transform.position);
 
             BoxCollider* col = (BoxCollider*)obj->Collider->collider;
 
@@ -314,6 +318,7 @@ int main(int argc, char** argv)
                 if (obj->PhysicsTag == PLAYER)continue;
                 float scale = 0.05f;
                 modelMatrix = glms_scale(modelMatrix, (vec3s){scale,scale,scale});
+                modelMatrix = glms_rotate(modelMatrix, -currentFrame*1.5, (vec3s){0.0, 1.0, 0.0});
                 Shader_use(&shader);
                 Shader_setMat4(&shader, "projection", perspective);
                 Shader_setMat4(&shader, "view", view);

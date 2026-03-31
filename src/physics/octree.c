@@ -8,6 +8,9 @@
 
 #include "glad/glad.h"
 
+struct OctreeNode_t nodes[OCTREE_MAX_NODES];
+unsigned int octree_last = 0;
+
 bool AABB_Collision(AABB* a, AABB* b) {
     return (a->min.x <= b->max.x && a->max.x >= b->min.x) &&
            (a->min.y <= b->max.y && a->max.y >= b->min.y) &&
@@ -19,25 +22,30 @@ bool AABB_Point(AABB* a, vec3s p) {
            (p.z >= a->min.z && p.z <= a->max.z);
 }
 
-OctreeNode* Octree_create(AABB aabb, unsigned int mE, unsigned int mD) {
-    OctreeNode* node= malloc(sizeof(OctreeNode));
+void Octree_ResetPool(AABB worldBounds) {
+    // On repart à 1 car l'index 0 est la Racine (Root)
+    octree_last = 1;
 
+    // On initialise le premier nœud du tableau
+    Octree_create(&nodes[0], worldBounds);
+    nodes[0].currentDepth = 0;
+}
+
+void Octree_create(OctreeNode* node, AABB aabb) {
     node->aabb = aabb;
-    node->maxDepth = mD;
-    node->maxElements = mE;
     node->isLeaf = true;
     node->currentDepth = 0;
-    node->objects = malloc(sizeof(PhysicsObject) * mE);
     node->numObjects = 0;
-    node->nodes = NULL;
-
-    return node;
 }
 
 void Octree_subdivide(OctreeNode* node) {
+    if (octree_last + 8 >= OCTREE_MAX_NODES) {
+        return;
+    }
+
     node->isLeaf = false;
-    // On divise en 8 car on coupe en 2 chaque axe
-    node->nodes = malloc(sizeof(OctreeNode) * 8);
+    node->firstChildIndex = octree_last;
+    octree_last += 8;
 
     // On recupere les infos de base
     vec3s min = node->aabb.min;
@@ -72,54 +80,41 @@ void Octree_subdivide(OctreeNode* node) {
 
     // Suffit d'initialiser chaque node
     for (int i = 0; i < 8; i++) {
-        node->nodes[i] = Octree_create(aabbs[i], node->maxElements, node->maxDepth);
-        node->nodes[i]->currentDepth = node->currentDepth + 1;
+        unsigned int position = node->firstChildIndex + i;
+        Octree_create(&nodes[position], aabbs[i]);
+        nodes[position].currentDepth = node->currentDepth + 1;
     }
 }
 
 void Octree_clean(OctreeNode* node) {
-    if (node->isLeaf) {
-        free(node->objects);
-        free(node->nodes);
-        free(node);
-        return;
-    }
-    for (int i = 0; i < 8; i++) {
-        Octree_clean(node->nodes[i]);
-    }
-    free(node->nodes);
-    free(node);
+
 }
 
 bool Octree_addElement(OctreeNode* node, PhysicsObject* object) {
     // Si on est dans une feuille on peut ajouter
     if (node->isLeaf) {
         // On verifie deja si on depasse pas la taille max
-        if (node->numObjects < node->maxElements) {
+        if (node->numObjects < OCTREE_MAX_CAPACITY) {
             node->objects[node->numObjects] = object;
             node->numObjects += 1;
             return true;
         }
         else {
-            if (node->currentDepth < node->maxDepth) {
+            if (node->currentDepth < OCTREE_MAX_DEPTH) {
                 // On subdivide et on transmet les enfants
                 Octree_subdivide(node);
 
-                // On sauvegarde et nettoie
-                PhysicsObject** oldObjects = node->objects;
+                PhysicsObject* localObjects[OCTREE_MAX_CAPACITY];
                 unsigned int count = node->numObjects;
-                node->objects = NULL;
+                for(unsigned int i = 0; i < count; i++) {
+                    localObjects[i] = node->objects[i];
+                }
                 node->numObjects = 0;
 
-                // On ajoute tout les elements dans les enfants
                 for (unsigned int i = 0; i < count; i++) {
-                    Octree_addElement(node, oldObjects[i]);
+                    Octree_addElement(node, localObjects[i]);
                 }
-                Octree_addElement(node, object);
-
-                // Enfin on libere le tableau
-                free(oldObjects);
-                return true;
+                return Octree_addElement(node, object);
             }
             else {
                 return false;
@@ -127,14 +122,17 @@ bool Octree_addElement(OctreeNode* node, PhysicsObject* object) {
         }
     }
     else {
+        bool added = false;
         BoxCollider* collider = (BoxCollider*)(object->Collider->collider);
         AABB aabb = { glms_vec3_sub(object->Transform.position, collider->HalfSize), glms_vec3_add(object->Transform.position, collider->HalfSize)  };
         for (int i = 0; i < 8; i++) {
-            if (AABB_Collision(&node->nodes[i]->aabb, &aabb )) {
-                Octree_addElement(node->nodes[i], object);
+            unsigned int position = node->firstChildIndex + i;
+            if (AABB_Collision(&nodes[position].aabb, &aabb )) {
+                Octree_addElement(&nodes[position], object);
+                added = true;
             }
         }
-        return true;
+        return added;
     }
 }
 
@@ -161,9 +159,14 @@ void Octree_draw(OctreeNode* node, Shader* shader) {
     if (node == NULL) return;
     vec3s color = node->isLeaf ? (vec3s){0.0f, 1.0f, 0.0f} : (vec3s){1.0f, 1.0f, 1.0f};
     drawWireCube(node->aabb.min, node->aabb.max, color, shader);
-    if (!node->isLeaf && node->nodes != NULL) {
+    if (!node->isLeaf) {
         for (int i = 0; i < 8; i++) {
-            Octree_draw(node->nodes[i], shader);
+            unsigned int position = node->firstChildIndex + i;
+            Octree_draw(&nodes[position], shader);
         }
     }
+}
+
+OctreeNode* Octree_getNode(unsigned int index) {
+    return &nodes[index];
 }

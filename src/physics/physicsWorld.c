@@ -6,7 +6,8 @@
 #include "collision.h"
 #include "octree.h"
 
-#define FRICTION_COEF 0.01f
+#define FRICTION_COEF 0.4f
+#define WORLD_BOUND 100.0f
 
 // Fonction utilitaire locale pour éviter de répéter le code des murs
 void addWall(PhysicsWorld* world, vec3s pos, vec3s halfSize) {
@@ -48,37 +49,37 @@ void PhysicsWorld_explosion(PhysicsWorld *world, vec3s pos, float radius, float 
     }
 }
 
-PhysicsWorld PhysicsWorld_create() {
-    PhysicsWorld world;
-    world.numPhysicsObjects = 0;
-    world.numCollisions = 0;
-    world.gravity = (vec3s){0, -9.81f, 0};
-    world.debug = false;
+PhysicsWorld* PhysicsWorld_create() {
+    PhysicsWorld* world = malloc(sizeof(PhysicsWorld));
+    world->numPhysicsObjects = 0;
+    world->numCollisions = 0;
+    world->gravity = (vec3s){0, -9.81f, 0};
+    world->debug = false;
 
-    float groundSize = 50.0f; // La moitié de 30
+    float groundSize = WORLD_BOUND; // La moitié de 30
     float wallHeight = 1.5f;  // La moitié de 3
     float wallThickness = 0.5f;
 
     // 1. LE SOL (Centre : 0, -5, 0)
-    addWall(&world, (vec3s){0.0f, -5.0f, 0.0f}, (vec3s){groundSize, 0.5f, groundSize});
+    addWall(world, (vec3s){0.0f, -5.0f, 0.0f}, (vec3s){groundSize, 0.5f, groundSize});
 
     // 2. MUR NORD (Z+)
-    addWall(&world,
+    addWall(world,
         (vec3s){0.0f, -5.0f + wallHeight, groundSize},
         (vec3s){groundSize, wallHeight, wallThickness});
 
     // 3. MUR SUD (Z-)
-    addWall(&world,
+    addWall(world,
         (vec3s){0.0f, -5.0f + wallHeight, -groundSize},
         (vec3s){groundSize, wallHeight, wallThickness});
 
     // 4. MUR EST (X+)
-    addWall(&world,
+    addWall(world,
         (vec3s){groundSize, -5.0f + wallHeight, 0.0f},
         (vec3s){wallThickness, wallHeight, groundSize});
 
     // 5. MUR OUEST (X-)
-    addWall(&world,
+    addWall(world,
         (vec3s){-groundSize, -5.0f + wallHeight, 0.0f},
         (vec3s){wallThickness, wallHeight, groundSize});
 
@@ -105,8 +106,9 @@ PhysicsObject* PhysicsWorld_addObject(PhysicsWorld *world) {
         obj->Mass = 1.0f;
 
         // Spawn aléatoire sur la surface du plateau (entre -14 et 14 pour pas tomber direct)
-        float rx = ((float)rand() / (float)RAND_MAX) * 90.0f - 45.0f;
-        float rz = ((float)rand() / (float)RAND_MAX) * 90.0f - 45.0f;
+        float worldSize = WORLD_BOUND - 5;
+        float rx = ((float)rand() / (float)RAND_MAX) * (2*worldSize) - worldSize;
+        float rz = ((float)rand() / (float)RAND_MAX) * (2*worldSize) - worldSize;
 
         obj->Transform.position = (vec3s){rx, 15.0f, rz};
 
@@ -208,19 +210,6 @@ void checkNodeCollisions(PhysicsWorld* world, OctreeNode* node) {
                 PhysicsObject* objA = node->objects[i];
                 PhysicsObject* objB = node->objects[j];
 
-                // Optimisation: Un objet dynamique qui chevauche plusieurs noeuds peut
-                // être testé plusieurs fois contre le même objet.
-                // On vérifie qu'on n'a pas déjà ajouté cette collision.
-                bool alreadyChecked = false;
-                for(int c = 0; c < world->numCollisions; c++) {
-                    if ((world->collisions[c].objectA == objA && world->collisions[c].objectB == objB) ||
-                        (world->collisions[c].objectA == objB && world->collisions[c].objectB == objA)) {
-                        alreadyChecked = true;
-                        break;
-                        }
-                }
-                if (alreadyChecked) continue;
-
                 // On effectue le test de collision réel (Narrow Phase)
                 CollisionPoints collisionPoints = Collisions_testCollisions(
                     objA->Collider, &objA->Transform,
@@ -238,9 +227,10 @@ void checkNodeCollisions(PhysicsWorld* world, OctreeNode* node) {
         }
     }
     // Sinon, on descend dans les enfants
-    else if (node->nodes != NULL) {
+    else{
         for (int i = 0; i < 8; i++) {
-            checkNodeCollisions(world, node->nodes[i]);
+            unsigned int position = node->firstChildIndex + i;
+            checkNodeCollisions(world, Octree_getNode(position));
         }
     }
 }
@@ -249,22 +239,22 @@ void PhysicsWorld_resolveCollisions(PhysicsWorld *world, float deltaTime) {
     world->numCollisions = 0;
 
     AABB worldBounds;
-    worldBounds.min = (vec3s){-50.0f, -5.0f, -50.0f};
-    worldBounds.max = (vec3s){50.0f, 30.0f, 50.0f};
+    worldBounds.min = (vec3s){-WORLD_BOUND, -5.0f, -WORLD_BOUND};
+    worldBounds.max = (vec3s){WORLD_BOUND, 30.0f, WORLD_BOUND};
 
-    OctreeNode* root = Octree_create(worldBounds, 20, 6);
+    Octree_ResetPool(worldBounds);
 
     for (int i = 0; i < world->numPhysicsObjects; i++) {
-        Octree_addElement(root, &world->physicsObjects[i]);
+        Octree_addElement(Octree_getNode(0), &world->physicsObjects[i]);
     }
 
-    checkNodeCollisions(world, root);
+    checkNodeCollisions(world, Octree_getNode(0));
 
     if (world->debug && world->debugShader!=NULL) {
-        Octree_draw(root, world->debugShader);
+        Octree_draw(Octree_getNode(0), world->debugShader);
     }
 
-    Octree_clean(root);
+    Octree_clean(Octree_getNode(0));
 }
 
 void PhysicsWorld_afficherOctree(PhysicsWorld *world, bool b, Shader* shader) {
