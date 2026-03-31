@@ -7,7 +7,7 @@
 #include "octree.h"
 
 #define FRICTION_COEF 0.4f
-#define WORLD_BOUND 100.0f
+#define WORLD_BOUND 200.0f
 
 // Fonction utilitaire locale pour éviter de répéter le code des murs
 void addWall(PhysicsWorld* world, vec3s pos, vec3s halfSize) {

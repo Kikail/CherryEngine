@@ -3,26 +3,27 @@
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aNormal;
 layout (location = 2) in vec2 aTexCoords;
+// Les locations 3 et 4 sont utilisées par aTangent et aBiTangent dans ton Mesh.h
+layout (location = 5) in mat4 instanceMatrix; // Doit correspondre au 'startLocation = 5' du C
 
 out vec2 TexCoords;
 out vec3 iNormal;
 out vec3 FragPos;
 
-uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
 void main()
 {
-    // Position dans l'espace "Monde" (utile pour la lumière)
-    FragPos = vec3(model * vec4(aPos, 1.0));
+    // Position dans l'espace "Monde"
+    FragPos = vec3(instanceMatrix * vec4(aPos, 1.0));
 
     // Transfert des coordonnées de texture
     TexCoords = aTexCoords;
 
-    // On transforme la normale pour qu'elle suive la rotation de l'objet
-    // mat3(transpose(inverse(model))) évite les bugs de normales si l'objet subit un scale
-    iNormal = normalize(mat3(transpose(inverse(model))) * aNormal);
+    // On transforme la normale avec instanceMatrix au lieu de "model"
+    // mat3(transpose(inverse(instanceMatrix))) évite les bugs si l'objet subit un scale
+    iNormal = normalize(mat3(transpose(inverse(instanceMatrix))) * aNormal);
 
     // Position finale à l'écran
     gl_Position = projection * view * vec4(FragPos, 1.0);

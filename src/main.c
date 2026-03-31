@@ -1,13 +1,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <string.h>
+#include <time.h>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 #include <math.h>
-#include <string.h>
-#include <time.h>
 #include <cglm/struct.h>
 
 #include "cglm/cam.h"
@@ -36,12 +36,10 @@ static bool captureMouse = true;
 #define WIDTH  1920
 #define HEIGHT 1080
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
+// VBO pour stocker les matrices d'instanciation
+static GLuint instanceVBO;
 
 static char* GetPath(const char* file) {
-    // Calculer la taille nécessaire pour le chemin final
     size_t pathLen = strlen(RESOURCES_PATH) + 1 + strlen(file) + 1;
     char* finalPath = malloc(pathLen);
     if (finalPath == NULL) {
@@ -68,9 +66,8 @@ void processInput(Camera* camera, float deltaTime, GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
-
     if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS) {
-        PhysicsWorld_explosion(physics_world, physicsObject->Transform.position, 10, 10);
+        PhysicsWorld_explosion(physics_world, physicsObject->Transform.position, 30, 30);
     }
     if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS) {
         if (!onceMouse) return;
@@ -156,7 +153,7 @@ int main(int argc, char** argv)
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // CORE_PROFILE est préférable ici
 
     GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "CherryEngine", NULL, NULL);
     if (window == NULL) {
@@ -181,23 +178,11 @@ int main(int argc, char** argv)
     float lastFrame = 0.0f;
     float currentFrame = 0.0f;
 
-    Shape cube = Shape_create(SHAPE_CUBE);
-
-    // CORRECTION : Initialisation par pointeur sur la variable globale
     physics_world = PhysicsWorld_create();
-
-    printf("%s\n",GetPath("shaders/model.vs"));
 
     if (!Shader_load(&shader,
                 GetPath("shaders/model.vs"),
                 GetPath("shaders/model.fs") )) {
-        LOG("Erreur de chargement des shaders");
-    }
-
-    Shader cubeShader;
-    if (!Shader_load(&cubeShader,
-                GetPath("shaders/test.vs"),
-                GetPath("shaders/test.fs") )) {
         LOG("Erreur de chargement des shaders");
     }
 
@@ -217,7 +202,6 @@ int main(int argc, char** argv)
                 GetPath("shaders/debug.fs") )) {
         LOG("Erreur de chargement des shaders");
     }
-    PhysicsWorld_afficherOctree(physics_world, true, &debugShader);
 
     GameObject game_object = GameObject_Create();
     if (!GameObject_AddComponent(&game_object, &component_pool, COMPONENT_PLAYER_CONTROLLER)) {
@@ -242,18 +226,44 @@ int main(int argc, char** argv)
         false
     );
 
+    // =========================================================================
+    // CONFIGURATION DE L'INSTANCIATION POUR LE MODELE
+    // =========================================================================
+    glGenBuffers(1, &instanceVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+    // Pré-allocation pour 10000 matrices
+    glBufferData(GL_ARRAY_BUFFER, PHYSICS_MAX_OBJECTS * sizeof(mat4s), NULL, GL_DYNAMIC_DRAW);
+
+    // On configure le VAO de CHAQUE Mesh du modèle
+    for (unsigned int i = 0; i < model.numMeshes; i++) {
+        glBindVertexArray(model.meshes[i].VAO);
+        glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+
+        // Les attributs 0 à 4 sont déjà pris par ton Vertex struct
+        // La matrice mat4 utilisera les locations 5, 6, 7 et 8
+        int startLocation = 5;
+        for (int j = 0; j < 4; j++) {
+            glEnableVertexAttribArray(startLocation + j);
+            glVertexAttribPointer(startLocation + j, 4, GL_FLOAT, GL_FALSE, sizeof(mat4s), (void*)(j * sizeof(vec4s)));
+            glVertexAttribDivisor(startLocation + j, 1); // IMPORTANT : Avance par instance
+        }
+        glBindVertexArray(0);
+    }
+    // =========================================================================
+
     float timeCheck = 0.0f;
     int nbFrames = 0;
 
-    for (int i = 0; i < PHYSICS_MAX_OBJECTS; i++) {
+    for (int i = 0; i < PHYSICS_MAX_OBJECTS; i++) { // J'ai baissé à 2000 pour la demo, ajustable.
         PhysicsObject* obj = PhysicsWorld_addObject(physics_world);
         nbPhysicsObjects += 1;
-        if (i%100 == 0)
-            printf("%d\n", nbPhysicsObjects);
     }
 
+    mat4s* modelMatrices = malloc(PHYSICS_MAX_OBJECTS * sizeof(mat4s)); // Allocation sécurisée sur la Heap
+    int instanceCount = 0;
+
     while (!glfwWindowShouldClose(window)) {
-        glClearColor(0.6f, 0.6f, 0.6f, 0.0f);
+        glClearColor(0.2f, 0.3f, 0.4f, 1.0f); // Légèrement coloré pour bien voir les cubes
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         currentFrame = (float)glfwGetTime();
@@ -263,7 +273,7 @@ int main(int argc, char** argv)
         if (timeCheck >= 1.0f) {
             char title[128];
             double msPerFrame = (nbFrames > 0) ? (1000.0 / (double)nbFrames) : 0.0;
-            sprintf(title, "CherryEngine - [FPS: %d | %.2f ms]", nbFrames, msPerFrame);
+            sprintf(title, "CherryEngine - [FPS: %d | %.2f ms | Objects: %d]", nbFrames, msPerFrame, instanceCount);
             glfwSetWindowTitle(window, title);
 
             timeCheck = 0.0f;
@@ -273,9 +283,6 @@ int main(int argc, char** argv)
         mat4s view = Camera_getViewMatrix(&camera);
 
         // Ce bloc calcule la physique
-        Shader_use(&debugShader);
-        Shader_setMat4(&debugShader, "projection", perspective);
-        Shader_setMat4(&debugShader, "view", view);
         PhysicsWorld_step(physics_world, deltaTime);
 
         processInput(&camera, deltaTime, window);
@@ -284,50 +291,55 @@ int main(int argc, char** argv)
             Component_PlayerController_Update(player_controller, &game_object, deltaTime);
         }
 
+        instanceCount = 0;
         for (int i = 0; i < physics_world->numPhysicsObjects; i++) {
             PhysicsObject* obj = &physics_world->physicsObjects[i];
+
             if (!obj->Collider) continue;
+            if (obj->PhysicsTag == PLAYER) continue;
 
-            mat4s translation = glms_translate(glms_mat4_identity(), obj->Transform.position);
+            if (obj->Collider->type == CUBE && obj->PhysicsType == DYNAMIC) {
 
+                // --- CALCUL CORRECT DE LA MATRICE (T * R * S) ---
+                mat4s matrice = glms_mat4_identity();
 
-            mat4s scale = glms_mat4_identity();
-            if (obj->Collider->type == CUBE) {
-                BoxCollider* col = (BoxCollider*)obj->Collider->collider;
-                if (col) {
-                    float scaleFactor = (obj->PhysicsType == STATIC) ? 2.0f : 0.1f;
-                    scale = glms_scale(glms_mat4_identity(),
-                        glms_vec3_scale(col->HalfSize, scaleFactor));
-                }
-            }
+                // 1. Translation
+                matrice = glms_translate(matrice, obj->Transform.position);
 
-            mat4s modelMatrix = glms_translate(glms_mat4_identity(), physics_world->physicsObjects[i].Transform.position);
+                // 3. Scale (Echelle du modèle)
+                matrice = glms_scale(matrice, (vec3s){0.05f, 0.05f, 0.05f});
 
-            BoxCollider* col = (BoxCollider*)obj->Collider->collider;
-
-            if (obj->PhysicsType == STATIC) {
-                modelMatrix = glms_scale(modelMatrix, glms_vec3_scale(col->HalfSize, 2.0));
-                Shader_use(&cubeShader);
-                Shader_setMat4(&cubeShader, "projection", perspective);
-                Shader_setMat4(&cubeShader, "view", view);
-                Shader_setMat4(&cubeShader, "model", modelMatrix);
-                Shader_setVec3(&cubeShader, "lightDirection", lightDirection);
-                Shape_draw(&cube);
-            } else {
-
-                if (obj->PhysicsTag == PLAYER)continue;
-                float scale = 0.05f;
-                modelMatrix = glms_scale(modelMatrix, (vec3s){scale,scale,scale});
-                modelMatrix = glms_rotate(modelMatrix, -currentFrame*1.5, (vec3s){0.0, 1.0, 0.0});
-                Shader_use(&shader);
-                Shader_setMat4(&shader, "projection", perspective);
-                Shader_setMat4(&shader, "view", view);
-                Shader_setMat4(&shader, "model", modelMatrix);
-                Shader_setVec3(&shader, "lightDirection", lightDirection);
-                Model_Draw(&model, &shader);
-
+                modelMatrices[instanceCount] = matrice;
+                instanceCount++;
+                if (instanceCount >= PHYSICS_MAX_OBJECTS) break;
             }
         }
+
+        // 2. Mise à jour du buffer sur le GPU
+        glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, instanceCount * sizeof(mat4s), modelMatrices);
+
+        // 3. Rendu instancié pour tous les meshes composant le modèle
+        Shader_use(&shader);
+        Shader_setMat4(&shader, "projection", perspective);
+        Shader_setMat4(&shader, "view", view);
+
+        // CORRECTION : Envoi de la lumière
+        Shader_setVec3(&shader, "lightDirection", lightDirection);
+        Shader_setInt(&shader, "texture_diffuse1", 0); // Spécifier l'unité de texture
+
+        for (unsigned int i = 0; i < model.numMeshes; i++) {
+
+            // Lier la texture du modèle s'il en a une
+            if(model.meshes[i].nbTextures > 0) {
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, model.meshes[i].textures[0].id);
+            }
+
+            glBindVertexArray(model.meshes[i].VAO);
+            glDrawElementsInstanced(GL_TRIANGLES, model.meshes[i].nbIndices, GL_UNSIGNED_INT, 0, instanceCount);
+        }
+        glBindVertexArray(0);
 
         timeCheck += deltaTime;
         nbFrames++;
@@ -336,7 +348,7 @@ int main(int argc, char** argv)
         glfwPollEvents();
     }
 
-
+    free(modelMatrices); // Ne pas oublier de free !
     cleanup(window);
     return EXIT_SUCCESS;
 }
