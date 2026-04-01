@@ -10,7 +10,7 @@
 #include "collision.h"
 #include "render/shader.h"
 
-#define PHYSICS_MAX_OBJECTS 20000
+#define PHYSICS_MAX_OBJECTS 15000
 typedef struct PhysicsWorld_t {
     PhysicsObject physicsObjects[PHYSICS_MAX_OBJECTS]; unsigned int numPhysicsObjects;
     Collision collisions[PHYSICS_MAX_OBJECTS*2]; unsigned int numCollisions;

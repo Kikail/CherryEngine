@@ -16,9 +16,6 @@ void main()
     // Détermination de la couleur de base (Albedo)
     vec4 color = texture(texture_diffuse1, TexCoords);
 
-    // --- Éclairage Directionnel ---
-
-    // 1. Ambiant
     float ambientStrength = 0.3;
 
     // 2. Diffuse

@@ -16,6 +16,7 @@
 #include "editor/ecs/gameObject.h"
 #include "physics/physicsWorld.h"
 #include "render/camera.h"
+#include "render/instanceMesh.h"
 #include "render/model.h"
 #include "render/shader.h"
 
@@ -226,30 +227,7 @@ int main(int argc, char** argv)
         false
     );
 
-    // =========================================================================
-    // CONFIGURATION DE L'INSTANCIATION POUR LE MODELE
-    // =========================================================================
-    glGenBuffers(1, &instanceVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-    // Pré-allocation pour 10000 matrices
-    glBufferData(GL_ARRAY_BUFFER, PHYSICS_MAX_OBJECTS * sizeof(mat4s), NULL, GL_DYNAMIC_DRAW);
-
-    // On configure le VAO de CHAQUE Mesh du modèle
-    for (unsigned int i = 0; i < model.numMeshes; i++) {
-        glBindVertexArray(model.meshes[i].VAO);
-        glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-
-        // Les attributs 0 à 4 sont déjà pris par ton Vertex struct
-        // La matrice mat4 utilisera les locations 5, 6, 7 et 8
-        int startLocation = 5;
-        for (int j = 0; j < 4; j++) {
-            glEnableVertexAttribArray(startLocation + j);
-            glVertexAttribPointer(startLocation + j, 4, GL_FLOAT, GL_FALSE, sizeof(mat4s), (void*)(j * sizeof(vec4s)));
-            glVertexAttribDivisor(startLocation + j, 1); // IMPORTANT : Avance par instance
-        }
-        glBindVertexArray(0);
-    }
-    // =========================================================================
+    InstanceMesh* instanceMesh = InstanceMesh_create(&model);
 
     float timeCheck = 0.0f;
     int nbFrames = 0;
@@ -258,9 +236,6 @@ int main(int argc, char** argv)
         PhysicsObject* obj = PhysicsWorld_addObject(physics_world);
         nbPhysicsObjects += 1;
     }
-
-    mat4s* modelMatrices = malloc(PHYSICS_MAX_OBJECTS * sizeof(mat4s)); // Allocation sécurisée sur la Heap
-    int instanceCount = 0;
 
     while (!glfwWindowShouldClose(window)) {
         glClearColor(0.2f, 0.3f, 0.4f, 1.0f); // Légèrement coloré pour bien voir les cubes
@@ -273,7 +248,7 @@ int main(int argc, char** argv)
         if (timeCheck >= 1.0f) {
             char title[128];
             double msPerFrame = (nbFrames > 0) ? (1000.0 / (double)nbFrames) : 0.0;
-            sprintf(title, "CherryEngine - [FPS: %d | %.2f ms | Objects: %d]", nbFrames, msPerFrame, instanceCount);
+            sprintf(title, "CherryEngine - [FPS: %d | %.2f ms | Objects: %d]", nbFrames, msPerFrame, instanceMesh->instanceCount);
             glfwSetWindowTitle(window, title);
 
             timeCheck = 0.0f;
@@ -291,7 +266,8 @@ int main(int argc, char** argv)
             Component_PlayerController_Update(player_controller, &game_object, deltaTime);
         }
 
-        instanceCount = 0;
+        // On recupere les positions actualisees de chaque physics object et on le stocke dans les matrices
+        InstanceMesh_reset(instanceMesh);
         for (int i = 0; i < physics_world->numPhysicsObjects; i++) {
             PhysicsObject* obj = &physics_world->physicsObjects[i];
 
@@ -299,47 +275,30 @@ int main(int argc, char** argv)
             if (obj->PhysicsTag == PLAYER) continue;
 
             if (obj->Collider->type == CUBE && obj->PhysicsType == DYNAMIC) {
-
-                // --- CALCUL CORRECT DE LA MATRICE (T * R * S) ---
                 mat4s matrice = glms_mat4_identity();
 
                 // 1. Translation
                 matrice = glms_translate(matrice, obj->Transform.position);
 
+                matrice = glms_rotate(matrice, -currentFrame * 1.5, (vec3s){0.0,1.0,0.0});
+
                 // 3. Scale (Echelle du modèle)
                 matrice = glms_scale(matrice, (vec3s){0.05f, 0.05f, 0.05f});
 
-                modelMatrices[instanceCount] = matrice;
-                instanceCount++;
-                if (instanceCount >= PHYSICS_MAX_OBJECTS) break;
+                InstanceMesh_add(instanceMesh, matrice);
             }
         }
 
-        // 2. Mise à jour du buffer sur le GPU
-        glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, instanceCount * sizeof(mat4s), modelMatrices);
+        // On met a jour le GPU
+        InstanceMesh_updateGPU(instanceMesh);
 
         // 3. Rendu instancié pour tous les meshes composant le modèle
         Shader_use(&shader);
         Shader_setMat4(&shader, "projection", perspective);
         Shader_setMat4(&shader, "view", view);
-
-        // CORRECTION : Envoi de la lumière
         Shader_setVec3(&shader, "lightDirection", lightDirection);
-        Shader_setInt(&shader, "texture_diffuse1", 0); // Spécifier l'unité de texture
 
-        for (unsigned int i = 0; i < model.numMeshes; i++) {
-
-            // Lier la texture du modèle s'il en a une
-            if(model.meshes[i].nbTextures > 0) {
-                glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, model.meshes[i].textures[0].id);
-            }
-
-            glBindVertexArray(model.meshes[i].VAO);
-            glDrawElementsInstanced(GL_TRIANGLES, model.meshes[i].nbIndices, GL_UNSIGNED_INT, 0, instanceCount);
-        }
-        glBindVertexArray(0);
+        InstanceMesh_draw(instanceMesh);
 
         timeCheck += deltaTime;
         nbFrames++;
@@ -348,7 +307,6 @@ int main(int argc, char** argv)
         glfwPollEvents();
     }
 
-    free(modelMatrices); // Ne pas oublier de free !
     cleanup(window);
     return EXIT_SUCCESS;
 }

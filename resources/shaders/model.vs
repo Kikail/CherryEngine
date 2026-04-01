@@ -3,7 +3,6 @@
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aNormal;
 layout (location = 2) in vec2 aTexCoords;
-// Les locations 3 et 4 sont utilisées par aTangent et aBiTangent dans ton Mesh.h
 layout (location = 5) in mat4 instanceMatrix; // Doit correspondre au 'startLocation = 5' du C
 
 out vec2 TexCoords;
