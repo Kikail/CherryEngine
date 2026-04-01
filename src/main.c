@@ -20,25 +20,13 @@
 #include "render/model.h"
 #include "render/shader.h"
 
-static PhysicsWorld* physics_world;
-
 static bool firstMouse = true;
 static Camera camera;
 static float lastX, lastY;
-
-static PhysicsObject* physicsObject = NULL;
-int nbPhysicsObjects = 0;
-
-static Shader shader;
-static bool onceKey = true;
-static bool onceMouse = true;
 static bool captureMouse = true;
 
-#define WIDTH  1920
-#define HEIGHT 1080
-
-// VBO pour stocker les matrices d'instanciation
-static GLuint instanceVBO;
+#define WIDTH  1280
+#define HEIGHT 720
 
 static char* GetPath(const char* file) {
     size_t pathLen = strlen(RESOURCES_PATH) + 1 + strlen(file) + 1;
@@ -61,44 +49,8 @@ static void cleanup(GLFWwindow* window)
 
 void processInput(Camera* camera, float deltaTime, GLFWwindow* window)
 {
-    (void)camera;
-    (void)deltaTime;
-
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
-
-    if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS) {
-        PhysicsWorld_explosion(physics_world, physicsObject->Transform.position, 30, 30);
-    }
-    if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS) {
-        if (!onceMouse) return;
-        onceMouse = false;
-
-        captureMouse = !captureMouse;
-        glfwSetInputMode(window, GLFW_CURSOR,
-            captureMouse ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
-
-        LOG(captureMouse ? "capture true" : "capture false");
-    } else {
-        onceMouse = true;
-    }
-
-    if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS) {
-        if (!onceKey) return;
-        onceKey = false;
-
-        Shader loaded;
-        LOG("CHARGEMENT DES SHADERS...");
-        if (!Shader_load(&loaded,
-                GetPath("shaders/test.vs"),
-                GetPath("shaders/test.fs") )) {
-            LOG("Erreur de chargement des shaders");
-        } else {
-            shader = loaded;
-        }
-    } else {
-        onceKey = true;
-    }
 }
 
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
@@ -127,8 +79,6 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
 int main(int argc, char** argv)
 {
     srand((unsigned int)time(NULL));
-
-    ComponentPool component_pool = ComponentPool_Create();
 
     // Caméra
     camera = Camera_createCamera(
@@ -178,72 +128,32 @@ int main(int argc, char** argv)
     float deltaTime = 0.0f;
     float lastFrame = 0.0f;
     float currentFrame = 0.0f;
+    vec3s lightDirection = {0.0, 1.0, 0.0};
 
-    physics_world = PhysicsWorld_create();
-
+    // Chargement des ressources
+    Shader shader;
     if (!Shader_load(&shader,
-                GetPath("shaders/model.vs"),
-                GetPath("shaders/model.fs") )) {
-        LOG("Erreur de chargement des shaders");
+                GetPath("shaders/testingModels.vs"),
+                GetPath("shaders/testingModels.fs") )) {
+        LOG("Erreur de chargement des shaders testingModels");
     }
-
-    vec3s lightDirection = {0.403945f, 0.868481f, -0.287348f};
-
-    physicsObject = PhysicsWorld_addObject(physics_world);
-    if (!physicsObject) {
-        LOG("Impossible de creer l'objet physique joueur");
-        cleanup(window);
-        return EXIT_FAILURE;
-    }
-    physicsObject->PhysicsTag = PLAYER;
-
-    Shader debugShader;
-    if (!Shader_load(&debugShader,
-                GetPath("shaders/debug.vs"),
-                GetPath("shaders/debug.fs") )) {
-        LOG("Erreur de chargement des shaders");
-    }
-
-    GameObject game_object = GameObject_Create();
-    if (!GameObject_AddComponent(&game_object, &component_pool, COMPONENT_PLAYER_CONTROLLER)) {
-        LOG("ERROR ADDING PLAYER CONTROLLER");
-        cleanup(window);
-        return EXIT_FAILURE;
-    }
-
-    PlayerController* player_controller =
-        GameObject_GetComponent(&game_object, &component_pool, COMPONENT_PLAYER_CONTROLLER);
-
-    if (!player_controller) {
-        LOG("PlayerController introuvable");
-        cleanup(window);
-        return EXIT_FAILURE;
-    }
-
-    Component_PlayerController_Init(player_controller, physicsObject, &camera, window);
-
     Model model = Model_create(
         GetPath("models/test.obj"),
         false
     );
 
-    InstanceMesh* instanceMesh = InstanceMesh_create(&model);
+    // Position de base du mesh dans l'espace 3D
+    Transform modelTransform = {0};
+    Transform* ptr = &modelTransform;
+    Transform_setPosition(ptr, (vec3s){ 0.0f, -0.4f, 2.0f });
+    Transform_setScale(ptr, (vec3s){ .05f, .05f, .05f });
+    if (ptr == NULL) {
+        LOG("Erreur avec le transform");
+        return 1;
+    }
 
     float timeCheck = 0.0f;
     int nbFrames = 0;
-
-    // On creer une instance de chaque mesh et on met a jour le GPU
-    for (int i = 0; i < MAX_INSTANCE_MESHES; i++) {
-        float worldSize = WORLD_BOUND - 5;
-        float rx = ((float)rand() / (float)RAND_MAX) * (2*worldSize) - worldSize;
-        float rz = ((float)rand() / (float)RAND_MAX) * (2*worldSize) - worldSize;
-        vec3s newPosition = {rx, -4.0, rz};
-        mat4s matrice = glms_mat4_identity();
-        matrice = glms_translate(matrice, newPosition);
-        matrice = glms_scale(matrice, (vec3s){0.05f, 0.05f, 0.05f});
-        InstanceMesh_add(instanceMesh, matrice);
-    }
-    InstanceMesh_updateGPU(instanceMesh);
 
     while (!glfwWindowShouldClose(window)) {
         glClearColor(0.2f, 0.3f, 0.4f, 1.0f); // Légèrement coloré pour bien voir les cubes
@@ -256,7 +166,7 @@ int main(int argc, char** argv)
         if (timeCheck >= 1.0f) {
             char title[128];
             double msPerFrame = (nbFrames > 0) ? (1000.0 / (double)nbFrames) : 0.0;
-            sprintf(title, "CherryEngine - [FPS: %d | %.2f ms | Objects: %d]", nbFrames, msPerFrame, instanceMesh->instanceCount);
+            sprintf(title, "CherryEngine - [FPS: %d | %.2f ms]", nbFrames, msPerFrame);
             glfwSetWindowTitle(window, title);
 
             timeCheck = 0.0f;
@@ -265,22 +175,15 @@ int main(int argc, char** argv)
 
         mat4s view = Camera_getViewMatrix(&camera);
 
-        // Ce bloc calcule la physique
-        PhysicsWorld_step(physics_world, deltaTime);
-
         processInput(&camera, deltaTime, window);
-
-        if (player_controller != NULL) {
-            Component_PlayerController_Update(player_controller, &game_object, deltaTime);
-        }
 
         // 3. Rendu instancié pour tous les meshes composant le modèle
         Shader_use(&shader);
         Shader_setMat4(&shader, "projection", perspective);
         Shader_setMat4(&shader, "view", view);
+        Shader_setMat4(&shader, "model", Transform_getWorldMatrix(&modelTransform));
         Shader_setVec3(&shader, "lightDirection", lightDirection);
-
-        InstanceMesh_draw(instanceMesh);
+        Model_Draw(&model, &shader);
 
         timeCheck += deltaTime;
         nbFrames++;

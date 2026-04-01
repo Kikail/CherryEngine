@@ -13,7 +13,7 @@
 #define VECTOR_FRONT {0.0,0.0,-1.0}
 #define VECTOR_BACK {0.0,0.0,1.0}
 
-#define CAMERA_YAW (-90.0)
+#define CAMERA_YAW (90.0)
 #define CAMERA_PITCH (0.0f)
 #define CAMERA_SPEED (10.0)
 #define CAMERA_SENSIVITY (0.1f)
