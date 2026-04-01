@@ -5,9 +5,7 @@ in vec2 TexCoords;
 in vec3 iNormal;
 in vec3 FragPos;
 
-uniform vec3 lightDirection; // Direction envoyée depuis le C
-uniform int player;          // Switch texture / couleur unie
-uniform sampler2D texture_diffuse1;
+uniform vec3 lightDirection;
 
 void main()
 {
@@ -16,7 +14,7 @@ void main()
     vec3 lightDir = normalize(lightDirection);
 
     // Détermination de la couleur de base (Albedo)
-    vec4 color = texture(texture_diffuse1, TexCoords);
+    vec4 color = vec4(1.0,1.0,0.0,1.0);
 
     // --- Éclairage Directionnel ---
 

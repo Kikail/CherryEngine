@@ -20,14 +20,25 @@
 #include "render/model.h"
 #include "render/shader.h"
 
-static bool firstMouse = true;
-static Camera camera;
-static float lastX, lastY;
-static bool captureMouse = true;
-
 #define WIDTH  1280
 #define HEIGHT 720
 
+// ==========================================
+// VARIABLES GLOBALES (Caméra Orbitale)
+// ==========================================
+static Camera camera; // Conservé pour compatibilité avec tes fonctions existantes
+
+static bool isDragging = false;
+static float lastX = WIDTH / 2.0f;
+static float lastY = HEIGHT / 2.0f;
+
+static float camYaw = 90.0f;
+static float camPitch = 0.0f;
+static float camRadius = 5.0f; // Distance (Zoom)
+
+// ==========================================
+// FONCTIONS UTILITAIRES
+// ==========================================
 static char* GetPath(const char* file) {
     size_t pathLen = strlen(RESOURCES_PATH) + 1 + strlen(file) + 1;
     char* finalPath = malloc(pathLen);
@@ -53,43 +64,69 @@ void processInput(Camera* camera, float deltaTime, GLFWwindow* window)
         glfwSetWindowShouldClose(window, true);
 }
 
-void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
-{
-    (void)window;
-
-    float xpos = (float)xposIn;
-    float ypos = (float)yposIn;
-
-    if (firstMouse) {
-        lastX = xpos;
-        lastY = ypos;
-        firstMouse = false;
-    }
-
-    float xoffset = xpos - lastX;
-    float yoffset = lastY - ypos;
-    lastX = xpos;
-    lastY = ypos;
-
-    if (captureMouse) {
-        Camera_processMouseMovement(&camera, xoffset, yoffset);
+// ==========================================
+// CALLBACKS SOURIS & MOLETTE
+// ==========================================
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
+    (void)mods;
+    if (button == GLFW_MOUSE_BUTTON_LEFT) {
+        if (action == GLFW_PRESS) {
+            isDragging = true;
+        } else if (action == GLFW_RELEASE) {
+            isDragging = false;
+        }
     }
 }
 
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
+    (void)xoffset;
+    camRadius -= (float)yoffset * 0.5f; // Ajuste la vitesse du zoom ici
+
+    // Limites du zoom
+    if (camRadius < 1.0f) camRadius = 1.0f;
+    if (camRadius > 50.0f) camRadius = 50.0f;
+}
+
+void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
+{
+    float xpos = (float)xposIn;
+    float ypos = (float)yposIn;
+
+    static bool firstDrag = true;
+    if (isDragging && firstDrag) {
+        lastX = xpos;
+        lastY = ypos;
+        firstDrag = false;
+    } else if (!isDragging) {
+        firstDrag = true;
+        return; // Ne rien faire si on ne maintient pas le clic
+    }
+
+    float xoffset = xpos - lastX;
+    float yoffset = lastY - ypos; // Inversé
+    lastX = xpos;
+    lastY = ypos;
+
+    float sensitivity = 0.2f;
+    camYaw += xoffset * sensitivity;
+    camPitch += yoffset * sensitivity;
+
+    // Bloquer le pitch pour éviter de faire des loopings avec la caméra
+    if (camPitch > 89.0f) camPitch = 89.0f;
+    if (camPitch < -89.0f) camPitch = -89.0f;
+}
+
+// ==========================================
+// MAIN
+// ==========================================
 int main(int argc, char** argv)
 {
     srand((unsigned int)time(NULL));
 
-    // Caméra
+    // Initialisation Factice de ta structure Camera (si processInput en a besoin)
     camera = Camera_createCamera(
-        glms_vec3_zero(),
-        (vec3s)VECTOR_UP,
-        (vec3s)VECTOR_FRONT,
-        CAMERA_YAW,
-        CAMERA_PITCH,
-        CAMERA_SPEED,
-        CAMERA_SENSIVITY,
-        CAMERA_ZOOM
+        glms_vec3_zero(), (vec3s)VECTOR_UP, (vec3s)VECTOR_FRONT,
+        CAMERA_YAW, CAMERA_PITCH, CAMERA_SPEED, CAMERA_SENSIVITY, CAMERA_ZOOM
     );
 
     float aspect = (float)WIDTH / (float)HEIGHT;
@@ -104,7 +141,7 @@ int main(int argc, char** argv)
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // CORE_PROFILE est préférable ici
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "CherryEngine", NULL, NULL);
     if (window == NULL) {
@@ -114,8 +151,12 @@ int main(int argc, char** argv)
     }
 
     glfwMakeContextCurrent(window);
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+    // NOUVEAU : Curseur normal et ajout des callbacks
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetMouseButtonCallback(window, mouse_button_callback);
+    glfwSetScrollCallback(window, scroll_callback);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         LOG("Erreur de Init Glad");
@@ -128,7 +169,7 @@ int main(int argc, char** argv)
     float deltaTime = 0.0f;
     float lastFrame = 0.0f;
     float currentFrame = 0.0f;
-    vec3s lightDirection = {0.0, 1.0, 0.0};
+    vec3s lightDirection = {0.45, 1.0, 0.45};
 
     // Chargement des ressources
     Shader shader;
@@ -137,26 +178,31 @@ int main(int argc, char** argv)
                 GetPath("shaders/testingModels.fs") )) {
         LOG("Erreur de chargement des shaders testingModels");
     }
+
     Model model = Model_create(
-        GetPath("models/test.obj"),
+        GetPath("models/teapot.obj"),
         false
     );
 
-    // Position de base du mesh dans l'espace 3D
+    // Initialisation sécurisée du Transform
     Transform modelTransform = {0};
     Transform* ptr = &modelTransform;
-    Transform_setPosition(ptr, (vec3s){ 0.0f, -0.4f, 2.0f });
-    Transform_setScale(ptr, (vec3s){ .05f, .05f, .05f });
-    if (ptr == NULL) {
-        LOG("Erreur avec le transform");
-        return 1;
-    }
+
+    ptr->rotation = glms_quat_identity(); // IMPORTANT : Initialise le quaternion
+    ptr->isDirty = true;
+
+    // On centre l'objet à 0,0,0 pour que la caméra orbite parfaitement autour de lui
+    Transform_setPosition(ptr, (vec3s){ 0.0f, -0.4f, 0.0f });
+    Transform_setScale(ptr, (vec3s){ .2f, .2f, .2f });
 
     float timeCheck = 0.0f;
     int nbFrames = 0;
 
+    // ==========================================
+    // BOUCLE DE RENDU
+    // ==========================================
     while (!glfwWindowShouldClose(window)) {
-        glClearColor(0.2f, 0.3f, 0.4f, 1.0f); // Légèrement coloré pour bien voir les cubes
+        glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         currentFrame = (float)glfwGetTime();
@@ -173,16 +219,25 @@ int main(int argc, char** argv)
             nbFrames = 0;
         }
 
-        mat4s view = Camera_getViewMatrix(&camera);
-
         processInput(&camera, deltaTime, window);
 
-        // 3. Rendu instancié pour tous les meshes composant le modèle
+        // NOUVEAU : Calcul mathématique de la Caméra Orbitale
+        vec3s camPos;
+        camPos.x = camRadius * cosf(glm_rad(camYaw)) * cosf(glm_rad(camPitch));
+        camPos.y = camRadius * sinf(glm_rad(camPitch));
+        camPos.z = camRadius * sinf(glm_rad(camYaw)) * cosf(glm_rad(camPitch));
+
+        vec3s target = {0.0f, 0.0f, 0.0f}; // L'origine du monde
+        vec3s up = {0.0f, 1.0f, 0.0f};     // Le vecteur haut
+        mat4s view = glms_lookat(camPos, target, up);
+
+        // Rendu
         Shader_use(&shader);
         Shader_setMat4(&shader, "projection", perspective);
         Shader_setMat4(&shader, "view", view);
         Shader_setMat4(&shader, "model", Transform_getWorldMatrix(&modelTransform));
         Shader_setVec3(&shader, "lightDirection", lightDirection);
+
         Model_Draw(&model, &shader);
 
         timeCheck += deltaTime;
