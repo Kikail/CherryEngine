@@ -232,10 +232,18 @@ int main(int argc, char** argv)
     float timeCheck = 0.0f;
     int nbFrames = 0;
 
-    for (int i = 0; i < PHYSICS_MAX_OBJECTS; i++) { // J'ai baissé à 2000 pour la demo, ajustable.
-        PhysicsObject* obj = PhysicsWorld_addObject(physics_world);
-        nbPhysicsObjects += 1;
+    // On creer une instance de chaque mesh et on met a jour le GPU
+    for (int i = 0; i < MAX_INSTANCE_MESHES; i++) {
+        float worldSize = WORLD_BOUND - 5;
+        float rx = ((float)rand() / (float)RAND_MAX) * (2*worldSize) - worldSize;
+        float rz = ((float)rand() / (float)RAND_MAX) * (2*worldSize) - worldSize;
+        vec3s newPosition = {rx, -4.0, rz};
+        mat4s matrice = glms_mat4_identity();
+        matrice = glms_translate(matrice, newPosition);
+        matrice = glms_scale(matrice, (vec3s){0.05f, 0.05f, 0.05f});
+        InstanceMesh_add(instanceMesh, matrice);
     }
+    InstanceMesh_updateGPU(instanceMesh);
 
     while (!glfwWindowShouldClose(window)) {
         glClearColor(0.2f, 0.3f, 0.4f, 1.0f); // Légèrement coloré pour bien voir les cubes
@@ -262,35 +270,9 @@ int main(int argc, char** argv)
 
         processInput(&camera, deltaTime, window);
 
-        if (player_controller) {
+        if (player_controller != NULL) {
             Component_PlayerController_Update(player_controller, &game_object, deltaTime);
         }
-
-        // On recupere les positions actualisees de chaque physics object et on le stocke dans les matrices
-        InstanceMesh_reset(instanceMesh);
-        for (int i = 0; i < physics_world->numPhysicsObjects; i++) {
-            PhysicsObject* obj = &physics_world->physicsObjects[i];
-
-            if (!obj->Collider) continue;
-            if (obj->PhysicsTag == PLAYER) continue;
-
-            if (obj->Collider->type == CUBE && obj->PhysicsType == DYNAMIC) {
-                mat4s matrice = glms_mat4_identity();
-
-                // 1. Translation
-                matrice = glms_translate(matrice, obj->Transform.position);
-
-                matrice = glms_rotate(matrice, -currentFrame * 1.5, (vec3s){0.0,1.0,0.0});
-
-                // 3. Scale (Echelle du modèle)
-                matrice = glms_scale(matrice, (vec3s){0.05f, 0.05f, 0.05f});
-
-                InstanceMesh_add(instanceMesh, matrice);
-            }
-        }
-
-        // On met a jour le GPU
-        InstanceMesh_updateGPU(instanceMesh);
 
         // 3. Rendu instancié pour tous les meshes composant le modèle
         Shader_use(&shader);

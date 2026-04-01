@@ -9,7 +9,8 @@
 #include "../editor/ecs/components/transform.h"
 #include "collision.h"
 #include "render/shader.h"
-
+#define FRICTION_COEF 0.4f
+#define WORLD_BOUND 200.0f
 #define PHYSICS_MAX_OBJECTS 15000
 typedef struct PhysicsWorld_t {
     PhysicsObject physicsObjects[PHYSICS_MAX_OBJECTS]; unsigned int numPhysicsObjects;

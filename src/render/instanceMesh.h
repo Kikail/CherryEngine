@@ -8,8 +8,16 @@
 #include <cglm/struct.h>
 #include "model.h"
 
-#define MAX_INSTANCE_MESHES 10000
+#define MAX_INSTANCE_MESHES 100000
 
+/**
+ * Pour utiliser cette structure vous aurez besoin d'un Model
+ * Ensuite creez cette structure avec la fonction create
+ * Avant chaque frame utilisez reset afin de reinitialiser les donnees
+ * Une fois ceci fait ajoutez toutes les matrices de model que vous voulez via add
+ * Avant d'utiliser votre shader faites un updateGPU pour mettre toutes les matrices dans la memoir du GPU
+ * Et enfin utilisez draw pour afficher tout les models apres utilisation de votre shader
+ */
 typedef struct InstanceMesh_t {
     Model* model;
     unsigned int instanceVBO;
