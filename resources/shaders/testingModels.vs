@@ -23,10 +23,13 @@ void main()
     // Transfert des coordonnées de texture
     TexCoords = aTexCoords;
 
-    // Dans le Vertex Shader
-    vec3 T = normalize(vec3(model * vec4(aTangent, 0.0)));
-    vec3 B = normalize(vec3(model * vec4(aBiTangent, 0.0)));
-    vec3 N = normalize(vec3(model * vec4(aNormal, 0.0)));
+    mat3 normalMatrix = mat3(transpose(inverse(model)));
+    vec3 T = normalize(normalMatrix * aTangent);
+    vec3 N = normalize(normalMatrix * aNormal);
+    // Re-orthogonalisation (TRÈS IMPORTANT)
+    T = normalize(T - dot(T, N) * N);
+    // Recalcul du bitangent propre
+    vec3 B = cross(N, T);
     TBN = mat3(T, B, N);
 
     // On transforme la normale pour qu'elle suive la rotation de l'objet

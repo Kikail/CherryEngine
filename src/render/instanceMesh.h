@@ -8,7 +8,7 @@
 #include <cglm/struct.h>
 #include "model.h"
 
-#define MAX_INSTANCE_MESHES 100000
+#define MAX_INSTANCE_MESHES 300000
 
 /**
  * Pour utiliser cette structure vous aurez besoin d'un Model

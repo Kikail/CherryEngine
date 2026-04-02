@@ -111,7 +111,7 @@ Mesh Model_processMesh(Model* model, struct aiMesh* mesh, struct aiScene* scene)
         Vertex vertex;
         vertex.position = (vec3s){mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z};
 
-        if (mesh->mNormals) {
+        if (mesh->mNormals != NULL) {
             vertex.normal = (vec3s){mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z};
         } else {
             vertex.normal = (vec3s){0.0f, 0.0f, 0.0f};
@@ -121,7 +121,7 @@ Mesh Model_processMesh(Model* model, struct aiMesh* mesh, struct aiScene* scene)
             vertex.texCoords = (vec2s){mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y};
 
             // Sécurité supplémentaire : Assimp ne génère pas de tangentes si ça plante ou s'il manque des normales
-            if (mesh->mTangents && mesh->mBitangents) {
+            if (mesh->mTangents != NULL && mesh->mBitangents != NULL) {
                 vertex.tangent = (vec3s){mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z};
                 vertex.biTangent = (vec3s){mesh->mBitangents[i].x, mesh->mBitangents[i].y, mesh->mBitangents[i].z};
             } else {

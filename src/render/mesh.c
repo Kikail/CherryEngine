@@ -60,6 +60,7 @@ void Mesh_draw(Mesh* mesh, Shader* shader) {
     unsigned int normalNr = 1;
     unsigned int heightNr = 1;
 
+    /* ON SKIP LES TEXTURES
     for (unsigned int i = 0; i < mesh->nbTextures; i++) {
         glActiveTexture(GL_TEXTURE0 + i);
         char number[64] = "";
@@ -82,6 +83,7 @@ void Mesh_draw(Mesh* mesh, Shader* shader) {
         glUniform1i(glGetUniformLocation(shader->shaderID, completeName), i);
         glBindTexture(GL_TEXTURE_2D, mesh->textures[i].id);
     }
+    */
 
     glBindVertexArray(mesh->VAO);
     glDrawElements(GL_TRIANGLES, mesh->nbIndices, GL_UNSIGNED_INT, 0);

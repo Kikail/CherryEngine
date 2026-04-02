@@ -17,6 +17,7 @@
 #include "physics/physicsWorld.h"
 #include "render/camera.h"
 #include "render/instanceMesh.h"
+#include "render/material.h"
 #include "render/model.h"
 #include "render/shader.h"
 
@@ -35,6 +36,8 @@ static float lastY = HEIGHT / 2.0f;
 static float camYaw = 90.0f;
 static float camPitch = 0.0f;
 static float camRadius = 5.0f; // Distance (Zoom)
+
+vec3s lightPos = {0.45, 1.0, 0.45};
 
 // ==========================================
 // FONCTIONS UTILITAIRES
@@ -62,6 +65,20 @@ void processInput(Camera* camera, float deltaTime, GLFWwindow* window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
+
+    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+        lightPos.x -= 1 * deltaTime;
+    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+        lightPos.x += 1 * deltaTime;
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+        lightPos.z -= 1 * deltaTime;
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+        lightPos.z += 1 * deltaTime;
+    if (glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS)
+        lightPos.y += 1 * deltaTime;
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        lightPos.y -= 1 * deltaTime;
+
 }
 
 // ==========================================
@@ -169,7 +186,6 @@ int main(int argc, char** argv)
     float deltaTime = 0.0f;
     float lastFrame = 0.0f;
     float currentFrame = 0.0f;
-    vec3s lightDirection = {0.45, 1.0, 0.45};
 
     // Chargement des ressources
     Shader shader;
@@ -179,8 +195,14 @@ int main(int argc, char** argv)
         LOG("Erreur de chargement des shaders testingModels");
     }
     // Ici on indique la postion des textures dans le shader
+    Shader_use(&shader);
     Shader_setInt(&shader, "diffuse", 0);
     Shader_setInt(&shader, "normal", 1);
+
+    Model model2 = Model_create(
+        GetPath("models/cube.obj"),
+        false
+    );
 
     Model model = Model_create(
         GetPath("models/plane.obj"),
@@ -189,6 +211,12 @@ int main(int argc, char** argv)
     vec2s textureSize;
     unsigned int diffuseId = TextureFromFile(GetPath("images/chat02.png"), false, &textureSize);
     unsigned int normalId = TextureFromFile(GetPath("images/normal_map_brick.png"), false, &textureSize);
+    Material material = Material_create(
+        (vec3s){0.8,0.1,0.31},
+        (vec3s){1.0,0.5,0.31},
+        (vec3s){0.5,0.5,0.5},
+        32.0
+    );
 
     // Initialisation sécurisée du Transform
     Transform modelTransform = {0};
@@ -243,7 +271,9 @@ int main(int argc, char** argv)
         Shader_setMat4(&shader, "projection", perspective);
         Shader_setMat4(&shader, "view", view);
         Shader_setMat4(&shader, "model", Transform_getWorldMatrix(&modelTransform));
-        Shader_setVec3(&shader, "lightDirection", lightDirection);
+        Shader_setVec3(&shader, "lightPos", lightPos);
+        Shader_setVec3(&shader, "viewPos", camera.position);
+        Material_sendToShader(material, &shader);
 
         // Texture de diffuse et de normale
         glActiveTexture(GL_TEXTURE0);
@@ -252,6 +282,20 @@ int main(int argc, char** argv)
         glBindTexture(GL_TEXTURE_2D, normalId);
 
         Model_Draw(&model, &shader);
+
+
+        // Rendu
+        mat4s modelView = glms_translate(glms_mat4_identity(), lightPos);
+        modelView = glms_scale(modelView, (vec3s){0.1,0.1,0.1});
+        Shader_use(&shader);
+        Shader_setMat4(&shader, "projection", perspective);
+        Shader_setMat4(&shader, "view", view);
+        Shader_setMat4(&shader, "model", modelView);
+        Shader_setVec3(&shader, "lightPos", lightPos);
+        Shader_setVec3(&shader, "viewPos", camera.position);
+        Material_sendToShader(material, &shader);
+
+        Model_Draw(&model2, &shader);
 
         timeCheck += deltaTime;
         nbFrames++;
