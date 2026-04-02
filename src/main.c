@@ -205,7 +205,7 @@ int main(int argc, char** argv)
     );
 
     Model model = Model_create(
-        GetPath("models/plane.obj"),
+        GetPath("models/sphere.obj"),
         false
     );
     vec2s textureSize;
