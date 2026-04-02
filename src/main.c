@@ -178,11 +178,17 @@ int main(int argc, char** argv)
                 GetPath("shaders/testingModels.fs") )) {
         LOG("Erreur de chargement des shaders testingModels");
     }
+    // Ici on indique la postion des textures dans le shader
+    Shader_setInt(&shader, "diffuse", 0);
+    Shader_setInt(&shader, "normal", 1);
 
     Model model = Model_create(
-        GetPath("models/teapot.obj"),
+        GetPath("models/plane.obj"),
         false
     );
+    vec2s textureSize;
+    unsigned int diffuseId = TextureFromFile(GetPath("images/chat02.png"), false, &textureSize);
+    unsigned int normalId = TextureFromFile(GetPath("images/normal_map_brick.png"), false, &textureSize);
 
     // Initialisation sécurisée du Transform
     Transform modelTransform = {0};
@@ -192,8 +198,9 @@ int main(int argc, char** argv)
     ptr->isDirty = true;
 
     // On centre l'objet à 0,0,0 pour que la caméra orbite parfaitement autour de lui
-    Transform_setPosition(ptr, (vec3s){ 0.0f, -0.4f, 0.0f });
-    Transform_setScale(ptr, (vec3s){ .2f, .2f, .2f });
+    Transform_setPosition(ptr, (vec3s){ 0.0f, 0.0, 0.0f });
+    float scale = 1.0f;
+    Transform_setScale(ptr, (vec3s){scale, scale, scale});
 
     float timeCheck = 0.0f;
     int nbFrames = 0;
@@ -237,6 +244,12 @@ int main(int argc, char** argv)
         Shader_setMat4(&shader, "view", view);
         Shader_setMat4(&shader, "model", Transform_getWorldMatrix(&modelTransform));
         Shader_setVec3(&shader, "lightDirection", lightDirection);
+
+        // Texture de diffuse et de normale
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, diffuseId);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, normalId);
 
         Model_Draw(&model, &shader);
 
