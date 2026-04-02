@@ -194,10 +194,6 @@ int main(int argc, char** argv)
                 GetPath("shaders/testingModels.fs") )) {
         LOG("Erreur de chargement des shaders testingModels");
     }
-    // Ici on indique la postion des textures dans le shader
-    Shader_use(&shader);
-    Shader_setInt(&shader, "diffuse", 0);
-    Shader_setInt(&shader, "normal", 1);
 
     Model model2 = Model_create(
         GetPath("models/cube.obj"),
@@ -212,11 +208,14 @@ int main(int argc, char** argv)
     unsigned int diffuseId = TextureFromFile(GetPath("images/chat02.png"), false, &textureSize);
     unsigned int normalId = TextureFromFile(GetPath("images/normal_map_brick.png"), false, &textureSize);
     Material material = Material_create(
-        (vec3s){0.8,0.1,0.31},
-        (vec3s){1.0,0.5,0.31},
+        (vec3s){0.2,0.2,0.2},
+        (vec3s){1.0,1.0,1.0},
         (vec3s){0.5,0.5,0.5},
-        32.0
+        32.0,
+        &shader
     );
+    Material_attachNormalTexture(&material, normalId);
+    Material_attachDiffuseTexture(&material, diffuseId);
 
     // Initialisation sécurisée du Transform
     Transform modelTransform = {0};
@@ -273,14 +272,7 @@ int main(int argc, char** argv)
         Shader_setMat4(&shader, "model", Transform_getWorldMatrix(&modelTransform));
         Shader_setVec3(&shader, "lightPos", lightPos);
         Shader_setVec3(&shader, "viewPos", camera.position);
-        Material_sendToShader(material, &shader);
-
-        // Texture de diffuse et de normale
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, diffuseId);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, normalId);
-
+        Material_sendToShader(&material, &shader);
         Model_Draw(&model, &shader);
 
 
@@ -293,7 +285,7 @@ int main(int argc, char** argv)
         Shader_setMat4(&shader, "model", modelView);
         Shader_setVec3(&shader, "lightPos", lightPos);
         Shader_setVec3(&shader, "viewPos", camera.position);
-        Material_sendToShader(material, &shader);
+        Material_sendToShader(&material, &shader);
 
         Model_Draw(&model2, &shader);
 
