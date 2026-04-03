@@ -133,6 +133,8 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
     if (camPitch < -89.0f) camPitch = -89.0f;
 }
 
+
+
 // ==========================================
 // MAIN
 // ==========================================
@@ -195,7 +197,14 @@ int main(int argc, char** argv)
         LOG("Erreur de chargement des shaders testingModels");
     }
 
-    Model model2 = Model_create(
+    Shader shaderSkybox;
+    if (!Shader_load(&shaderSkybox,
+                GetPath("shaders/skybox.vs"),
+                GetPath("shaders/skybox.fs") )) {
+        LOG("Erreur de chargement des shaders skybox");
+    }
+
+    Model modelCube = Model_create(
         GetPath("models/cube.obj"),
         false
     );
@@ -223,6 +232,16 @@ int main(int argc, char** argv)
     Material_attachAoTexture(&material, aoId);
     Material_attachDisplacementTexture(&material, displacementId);
 
+
+    char* faces[6] = {
+        GetPath("images/skybox/right.jpg"),
+        GetPath("images/skybox/left.jpg"),
+        GetPath("images/skybox/top.jpg"),
+        GetPath("images/skybox/bottom.jpg"),
+        GetPath("images/skybox/front.jpg"),
+        GetPath("images/skybox/back.jpg")};
+    unsigned int cubemapTexture = loadCubemap(faces, 6);
+
     // Initialisation sécurisée du Transform
     Transform modelTransform = {0};
     Transform* ptr = &modelTransform;
@@ -232,7 +251,7 @@ int main(int argc, char** argv)
 
     // On centre l'objet à 0,0,0 pour que la caméra orbite parfaitement autour de lui
     Transform_setPosition(ptr, (vec3s){ 0.0f, 0.0, 0.0f });
-    float scale = 1.0f;
+    float scale = 10.0f;
     Transform_setScale(ptr, (vec3s){scale, scale, scale});
 
     float timeCheck = 0.0f;
@@ -271,6 +290,18 @@ int main(int argc, char** argv)
         vec3s up = {0.0f, 1.0f, 0.0f};     // Le vecteur haut
         mat4s view = glms_lookat(camPos, target, up);
 
+        mat4s viewSkybox = view;
+        viewSkybox.raw[3][0] = 0.0f; // Annule X
+        viewSkybox.raw[3][1] = 0.0f; // Annule Y
+        viewSkybox.raw[3][2] = 0.0f; // Annule Z
+        glDepthMask(GL_FALSE);
+        Shader_use(&shaderSkybox);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+        Shader_setMat4(&shaderSkybox, "projection", perspective);
+        Shader_setMat4(&shaderSkybox, "view", viewSkybox);
+        Model_Draw(&modelCube, &shaderSkybox);
+        glDepthMask(GL_TRUE);
+
         // Rendu
         Shader_use(&shader);
         Shader_setMat4(&shader, "projection", perspective);
@@ -293,7 +324,7 @@ int main(int argc, char** argv)
         Shader_setVec3(&shader, "viewPos", camera.position);
         Material_sendToShader(&material, &shader);
 
-        Model_Draw(&model2, &shader);
+        Model_Draw(&modelCube, &shader);
 
         timeCheck += deltaTime;
         nbFrames++;

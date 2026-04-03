@@ -25,6 +25,7 @@ typedef struct Model_t {
 }Model;
 
 unsigned int TextureFromFile(char* path, bool gamma, vec2s* size);
+unsigned int loadCubemap(char** faces, unsigned int nbFaces);
 Model Model_create(char* path, bool gamma);
 void Model_Draw(Model* model, Shader* shader);
 void Model_load(Model* model, char* path);
