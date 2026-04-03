@@ -7,7 +7,7 @@
 #include <string.h>
 #include <glad/glad.h>
 
-#define BUFFER_SIZE 2048
+#define BUFFER_SIZE 4096
 
 char* loadAndFillBuffer(char* path) {
     int i = 0;

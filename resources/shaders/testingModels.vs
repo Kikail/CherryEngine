@@ -15,27 +15,43 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
+struct Material {
+    bool usingDiffuseTexture;
+    bool usingSpecularTexture;
+    bool usingNormalTexture;
+    bool usingAOTexture;
+    bool usingDisplacementTexture;
+
+    sampler2D diffuseTexture;
+    sampler2D normalTexture;
+    sampler2D specularTexture;
+    sampler2D aoTexture;
+    sampler2D displacementTexture;
+
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+    float aoIntensity;
+    float shininess;
+    float displacementIntensity;
+};
+uniform Material material;
+
 void main()
 {
-    // Position dans l'espace "Monde" (utile pour la lumière)
-    FragPos = vec3(model * vec4(aPos, 1.0));
-
-    // Transfert des coordonnées de texture
+    vec3 currentPos = aPos;
+    if (material.usingDisplacementTexture) {
+        float height = texture(material.displacementTexture, aTexCoords).r;
+        currentPos += aNormal * (height * material.displacementIntensity);
+    }
+    FragPos = vec3(model * vec4(currentPos, 1.0));
     TexCoords = aTexCoords;
-
     mat3 normalMatrix = mat3(transpose(inverse(model)));
     vec3 T = normalize(normalMatrix * aTangent);
     vec3 N = normalize(normalMatrix * aNormal);
-    // Re-orthogonalisation (TRÈS IMPORTANT)
     T = normalize(T - dot(T, N) * N);
-    // Recalcul du bitangent propre
     vec3 B = cross(N, T);
     TBN = mat3(T, B, N);
-
-    // On transforme la normale pour qu'elle suive la rotation de l'objet
-    // mat3(transpose(inverse(model))) évite les bugs de normales si l'objet subit un scale
     iNormal = normalize(mat3(transpose(inverse(model))) * aNormal);
-
-    // Position finale à l'écran
     gl_Position = projection * view * vec4(FragPos, 1.0);
 }

@@ -37,7 +37,7 @@ static float camYaw = 90.0f;
 static float camPitch = 0.0f;
 static float camRadius = 5.0f; // Distance (Zoom)
 
-vec3s lightPos = {0.45, 1.0, 0.45};
+vec3s lightPos = {1.5, 1.5, 1.5};
 
 // ==========================================
 // FONCTIONS UTILITAIRES
@@ -201,21 +201,27 @@ int main(int argc, char** argv)
     );
 
     Model model = Model_create(
-        GetPath("models/sphere.obj"),
+        GetPath("models/plane.obj"),
         false
     );
     vec2s textureSize;
-    unsigned int diffuseId = TextureFromFile(GetPath("images/chat02.png"), false, &textureSize);
-    unsigned int normalId = TextureFromFile(GetPath("images/normal_map_brick.png"), false, &textureSize);
+    unsigned int diffuseId = TextureFromFile(GetPath("images/testingMaterial/Rocks001_1K-PNG_Color.png"), false, &textureSize);
+    unsigned int normalId = TextureFromFile(GetPath("images/testingMaterial/Rocks001_1K-PNG_NormalGL.png"), false, &textureSize);
+    unsigned int aoId = TextureFromFile(GetPath("images/testingMaterial/Rocks001_1K-PNG_AmbientOcclusion.png"), false, &textureSize);
+    unsigned int displacementId = TextureFromFile(GetPath("images/testingMaterial/Rocks001_1K-PNG_Displacement.png"), false, &textureSize);
     Material material = Material_create(
         (vec3s){0.2,0.2,0.2},
         (vec3s){1.0,1.0,1.0},
         (vec3s){0.5,0.5,0.5},
         32.0,
+        1.0,
+        0.15,
         &shader
     );
     Material_attachNormalTexture(&material, normalId);
     Material_attachDiffuseTexture(&material, diffuseId);
+    Material_attachAoTexture(&material, aoId);
+    Material_attachDisplacementTexture(&material, displacementId);
 
     // Initialisation sécurisée du Transform
     Transform modelTransform = {0};
