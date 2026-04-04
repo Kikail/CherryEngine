@@ -34,6 +34,7 @@ struct Material {
     float aoIntensity;
     float shininess;
     float displacementIntensity;
+    float reflectionIntensity;
 };
 uniform Material material;
 

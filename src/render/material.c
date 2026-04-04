@@ -3,7 +3,7 @@
 //
 #include "material.h"
 
-Material Material_create(vec3s a, vec3s d, vec3s s, float shininess, float aoIntensity, float displacementIntensity, Shader* shader) {
+Material Material_create(vec3s a, vec3s d, vec3s s, float shininess, float aoIntensity, float displacementIntensity, float reflectionIntensity, Shader* shader) {
     Shader_use(shader);
     Shader_setInt(shader, "material.diffuseTexture", 0);
     Shader_setInt(shader, "material.normalTexture", 1);
@@ -16,6 +16,7 @@ Material Material_create(vec3s a, vec3s d, vec3s s, float shininess, float aoInt
     mat.diffuse = d;
     mat.specular = s;
     mat.aoIntensity = aoIntensity;
+    mat.reflectionIntensity = reflectionIntensity;
     mat.shininess = shininess;
     mat.displacementIntensity = displacementIntensity;
     mat.usingDiffuseTexture = false;
@@ -54,6 +55,7 @@ void Material_sendToShader(Material* mat, Shader* shader) {
     Shader_setFloat(shader, "material.shininess", mat->shininess);
     Shader_setFloat(shader, "material.aoIntensity", mat->aoIntensity);
     Shader_setFloat(shader, "material.displacementIntensity", mat->displacementIntensity);
+    Shader_setFloat(shader, "material.reflectionIntensity", mat->reflectionIntensity);
 
     Shader_setBool(shader, "material.usingDiffuseTexture", mat->usingDiffuseTexture);
     if (mat->usingDiffuseTexture) {

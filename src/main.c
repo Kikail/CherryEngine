@@ -225,6 +225,7 @@ int main(int argc, char** argv)
         32.0,
         1.0,
         0.15,
+        1.0,
         &shader
     );
     Material_attachNormalTexture(&material, normalId);
@@ -304,11 +305,14 @@ int main(int argc, char** argv)
 
         // Rendu
         Shader_use(&shader);
+        glActiveTexture(GL_TEXTURE5);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+        Shader_setInt(&shader, "skybox", 5);
         Shader_setMat4(&shader, "projection", perspective);
         Shader_setMat4(&shader, "view", view);
         Shader_setMat4(&shader, "model", Transform_getWorldMatrix(&modelTransform));
         Shader_setVec3(&shader, "lightPos", lightPos);
-        Shader_setVec3(&shader, "viewPos", camera.position);
+        Shader_setVec3(&shader, "viewPos", camPos);
         Material_sendToShader(&material, &shader);
         Model_Draw(&model, &shader);
 
@@ -317,11 +321,14 @@ int main(int argc, char** argv)
         mat4s modelView = glms_translate(glms_mat4_identity(), lightPos);
         modelView = glms_scale(modelView, (vec3s){0.1,0.1,0.1});
         Shader_use(&shader);
+        glActiveTexture(GL_TEXTURE5);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+        Shader_setInt(&shader, "skybox", 5);
         Shader_setMat4(&shader, "projection", perspective);
         Shader_setMat4(&shader, "view", view);
         Shader_setMat4(&shader, "model", modelView);
         Shader_setVec3(&shader, "lightPos", lightPos);
-        Shader_setVec3(&shader, "viewPos", camera.position);
+        Shader_setVec3(&shader, "viewPos", camPos);
         Material_sendToShader(&material, &shader);
 
         Model_Draw(&modelCube, &shader);

@@ -29,8 +29,9 @@ typedef struct Material_t{
     float aoIntensity;
     float shininess;
     float displacementIntensity;
+    float reflectionIntensity;
 }Material;
-Material Material_create(vec3s a, vec3s d, vec3s s, float shininess, float aoIntensity, float displacementIntensity, Shader* shader);
+Material Material_create(vec3s a, vec3s d, vec3s s, float shininess, float aoIntensity, float displacementIntensity, float reflectionIntensity, Shader* shader);
 void Material_attachDiffuseTexture(Material *material, unsigned int diffuseTexture);
 void Material_attachSpecularTexture(Material *material, unsigned int specularTexture);
 void Material_attachNormalTexture(Material *material, unsigned int normalTexture);

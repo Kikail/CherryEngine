@@ -9,6 +9,7 @@ in vec3 iNormal;
 
 uniform vec3 viewPos;
 uniform vec3 lightPos;
+uniform samplerCube skybox;
 
 struct Material {
     bool usingDiffuseTexture;
@@ -29,6 +30,7 @@ struct Material {
     float aoIntensity;
     float shininess;
     float displacementIntensity;
+    float reflectionIntensity;
 };
 uniform Material material;
 
@@ -70,23 +72,46 @@ void main()
     // -------------------------------------------------------------------------
     vec3 lightColor = vec3(1.0);
 
-    // Ambiante
     vec3 ambient = lightColor * (material.ambient * ao) * diffuseTexColor;
 
-    // Diffuse
     vec3 lightDir = normalize(lightPos - FragPos);
     float diff = max(dot(norm, lightDir), 0.0);
     vec3 diffuse = lightColor * (diff * material.diffuse) * diffuseTexColor * ao;
 
-    // Spéculaire (Attention : reflect nécessite que le vecteur pointe vers la surface, d'où -lightDir)
+    // viewDir pointe du fragment VERS la caméra
     vec3 viewDir = normalize(viewPos - FragPos);
     vec3 reflectDir = reflect(-lightDir, norm);
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
     vec3 specular = lightColor * (spec * material.specular) * specularTexColor;
 
-    // -------------------------------------------------------------------------
-    // 4. COULEUR FINALE
-    // -------------------------------------------------------------------------
     vec3 result = ambient + diffuse + specular;
-    FragColor = vec4(result, 1.0);
+
+    // -------------------------------------------------------------------------
+    // 4. COULEUR FINALE & REFLEXION
+    // -------------------------------------------------------------------------
+    // Le vecteur d'incidence I doit pointer de la caméra VERS le fragment.
+    // C'est exactement l'inverse de viewDir que nous avons calculé juste au dessus !
+    vec3 I = -viewDir;
+
+    // Si la réflexion est trop déformée à cause de la normal map du rocher,
+    // remplace "norm" par "normalize(iNormal)" ici pour avoir un reflet lisse.
+    vec3 R;
+    if(material.usingNormalTexture){
+        vec3 smoothNormal = normalize(iNormal);
+        vec3 finalNormal = normalize(mix(smoothNormal, norm, 0.5)); // ajuste 0.3
+        R = reflect(I, finalNormal);
+    }
+    else{
+        R = reflect(I, iNormal);
+    }
+
+
+    vec3 reflection = texture(skybox, R).rgb;
+
+    // On mélange la couleur de base avec le reflet du ciel
+    float fresnel = pow(1.0 - max(dot(viewDir, norm), 0.0), 5.0);
+    float reflectFactor = mix(material.reflectionIntensity, 1.0, fresnel);
+    vec3 finalColor = mix(result, reflection, reflectFactor);
+
+    FragColor = vec4(finalColor, 1.0);
 }
