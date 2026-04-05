@@ -52,28 +52,28 @@ target_include_directories(glad PUBLIC external)
 add_executable(CherryEngine
         src/main.c
         src/utils/utils.h
-        src/editor/ecs/componentPool.c
-        src/editor/ecs/componentPool.h
-        src/editor/ecs/components/transform.c
-        src/editor/ecs/components/transform.h
-        src/editor/ecs/components/meshRenderer.c
-        src/editor/ecs/components/meshRenderer.h
-        src/editor/ecs/components/spriteRenderer.c
-        src/editor/ecs/components/spriteRenderer.h
-        src/editor/ecs/components/playerController.c
-        src/editor/ecs/components/playerController.h
+        src/game/ecs/componentPool.c
+        src/game/ecs/componentPool.h
+        src/game/ecs/components/transform.c
+        src/game/ecs/components/transform.h
+        src/game/ecs/components/meshRenderer.c
+        src/game/ecs/components/meshRenderer.h
+        src/game/ecs/components/spriteRenderer.c
+        src/game/ecs/components/spriteRenderer.h
+        src/game/ecs/components/playerController.c
+        src/game/ecs/components/playerController.h
         src/utils/types.h
-        src/editor/ecs/component.h
-        src/editor/ecs/gameObject.c
-        src/editor/ecs/gameObject.h
+        src/game/ecs/component.h
+        src/game/ecs/gameObject.c
+        src/game/ecs/gameObject.h
         src/utils/maths/Vector3.c
         src/utils/maths/Vector3.h
         src/render/camera.c
         src/render/camera.h
         src/render/shader.c
         src/render/shader.h
-        src/editor/core/shapes/shape.h
-        src/editor/core/shapes/shape.c
+        src/resource/shapes/shape.h
+        src/resource/shapes/shape.c
         src/physics/physicsObject.h
         src/physics/physicsWorld.h
         src/physics/physicsWorld.c

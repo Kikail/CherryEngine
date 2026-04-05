@@ -6,7 +6,7 @@
 #define CHERRYENGINE_PHYSICSWORLD_H
 
 #include "physicsObject.h"
-#include "../editor/ecs/components/transform.h"
+#include "../game/ecs/components/transform.h"
 #include "collision.h"
 #include "render/shader.h"
 #define FRICTION_COEF 0.4f

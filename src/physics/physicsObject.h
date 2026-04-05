@@ -8,7 +8,7 @@
 #include <cglm/struct.h>
 
 #include "colliders.h"
-#include "../editor/ecs/components/transform.h"
+#include "../game/ecs/components/transform.h"
 
 typedef enum PhysicsType_t {
     DYNAMIC,

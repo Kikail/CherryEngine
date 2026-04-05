@@ -5,7 +5,7 @@
 #ifndef CHERRYENGINE_COLLIDERS_H
 #define CHERRYENGINE_COLLIDERS_H
 
-#include "../editor/ecs/components/transform.h"
+#include "../game/ecs/components/transform.h"
 
 typedef enum ColliderType_t {
     PLANE,

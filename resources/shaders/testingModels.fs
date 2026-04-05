@@ -105,13 +105,16 @@ void main()
         R = reflect(I, iNormal);
     }
 
+    vec3 finalColor = result;
 
-    vec3 reflection = texture(skybox, R).rgb;
+    if(material.reflectionIntensity >= 0.01){
+        vec3 reflection = texture(skybox, R).rgb;
+        // On mélange la couleur de base avec le reflet du ciel
+        float fresnel = pow(1.0 - max(dot(viewDir, norm), 0.0), 5.0);
+        float reflectFactor = mix(material.reflectionIntensity, 1.0, fresnel);
+        finalColor = mix(result, reflection, reflectFactor);
+    }
 
-    // On mélange la couleur de base avec le reflet du ciel
-    float fresnel = pow(1.0 - max(dot(viewDir, norm), 0.0), 5.0);
-    float reflectFactor = mix(material.reflectionIntensity, 1.0, fresnel);
-    vec3 finalColor = mix(result, reflection, reflectFactor);
 
     FragColor = vec4(finalColor, 1.0);
 }

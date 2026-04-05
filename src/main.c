@@ -11,9 +11,9 @@
 #include <cglm/struct.h>
 
 #include "cglm/cam.h"
-#include "editor/core/shapes/shape.h"
-#include "editor/ecs/componentPool.h"
-#include "editor/ecs/gameObject.h"
+#include "resource/shapes/shape.h"
+#include "game/ecs/componentPool.h"
+#include "game/ecs/gameObject.h"
 #include "physics/physicsWorld.h"
 #include "render/camera.h"
 #include "render/instanceMesh.h"
@@ -219,19 +219,18 @@ int main(int argc, char** argv)
     unsigned int aoId = TextureFromFile(GetPath("images/testingMaterial/Rocks001_1K-PNG_AmbientOcclusion.png"), false, &textureSize);
     unsigned int displacementId = TextureFromFile(GetPath("images/testingMaterial/Rocks001_1K-PNG_Displacement.png"), false, &textureSize);
     Material material = Material_create(
-        (vec3s){0.2,0.2,0.2},
+        (vec3s){0.70,0.45,0.0},
         (vec3s){1.0,1.0,1.0},
         (vec3s){0.5,0.5,0.5},
-        32.0,
+        16.00,
         1.0,
-        0.15,
-        1.0,
+        0.05,
+        0.03,
         &shader
     );
     Material_attachNormalTexture(&material, normalId);
-    Material_attachDiffuseTexture(&material, diffuseId);
-    Material_attachAoTexture(&material, aoId);
     Material_attachDisplacementTexture(&material, displacementId);
+    Material_attachAoTexture(&material, aoId);
 
 
     char* faces[6] = {
