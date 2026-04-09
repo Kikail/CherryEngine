@@ -29,7 +29,7 @@ bool ComponentPool_CheckSpace(ComponentPool* componentPool, ComponentType compon
             break;
     }
     #ifdef DEBUG
-        LOG("ComponentPool_CheckSpace::Component not found");
+        DEBUG_LOG("ComponentPool_CheckSpace::Component not found");
     #endif
     return false;
 }
@@ -37,7 +37,7 @@ bool ComponentPool_CreateComponent(ComponentPool* componentPool, ComponentType c
     // On check si il y a encore de la place sinon on skip
     if(!ComponentPool_CheckSpace(componentPool, componentType)){
         #ifdef DEBUG
-            LOG("ComponentPool_CreateComponent::No more space available");
+            DEBUG_LOG("ComponentPool_CreateComponent::No more space available");
         #endif
         return false;
     }
@@ -66,7 +66,7 @@ bool ComponentPool_CreateComponent(ComponentPool* componentPool, ComponentType c
 void* ComponentPool_GetComponent(ComponentPool* componentPool, ComponentType componentType, uint32 index){
     if(index >= MAX_COMPONENTS){
         #ifdef DEBUG
-            LOG("ComponentPool_GetComponent::Index is over de max value");
+            DEBUG_LOG("ComponentPool_GetComponent::Index is over de max value");
         #endif
         return NULL;
     }
@@ -87,7 +87,7 @@ void* ComponentPool_GetComponent(ComponentPool* componentPool, ComponentType com
     }
 
     #ifdef DEBUG
-        LOG("ComponentPool_GetComponent::Component not found");
+        DEBUG_LOG("ComponentPool_GetComponent::Component not found");
     #endif
 
     return NULL;
@@ -96,7 +96,7 @@ void* ComponentPool_GetComponent(ComponentPool* componentPool, ComponentType com
 void ComponentPool_UpdateComponent(ComponentPool* componentPool, ComponentType componentType, void* component, GameObject* gameObject, float deltaTime){
     if(component == NULL){
 #ifdef DEBUG
-        LOG("ComponentPool_UpdateComponent::Component is NULL");
+        DEBUG_LOG("ComponentPool_UpdateComponent::Component is NULL");
 #endif
         return;
     }

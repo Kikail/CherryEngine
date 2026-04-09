@@ -10,7 +10,7 @@
 #include <stdbool.h>
 
 #include "../../utils/types.h"
-#include "component.h"
+#include "../ecs/component.h"
 
 typedef struct ComponentPool_t ComponentPool;
 
@@ -19,11 +19,13 @@ typedef struct ComponentPool_t ComponentPool;
 typedef struct GameObject_t {
     uint32 component_mask;
     Component components[MAX_COMPONENT_PER_OBJECT]; uint32 componentCount;
+    char* name;
 } GameObject;
 
-GameObject GameObject_Create();
+GameObject GameObject_Create(char* name);
 bool GameObject_AddComponent(GameObject* gameObject, ComponentPool* componentPool, ComponentType componentType);
 bool GameObject_HasComponent(GameObject* gameObject, ComponentType componentType);
 void* GameObject_GetComponent(GameObject* gameObject, ComponentPool* componentPool, ComponentType componentType);
+void GameObject_updateComponents(GameObject* gameObject, ComponentPool* componentPool, float deltaTime);
 
 #endif //CHERRYENGINE_GAMEOBJECT_H

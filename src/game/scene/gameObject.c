@@ -1,20 +1,21 @@
 //
 // Created by killian on 3/11/26.
 //
-#include "gameObject.h"
-#include "componentPool.h"
+#include "../scene/gameObject.h"
+#include "../ecs/componentPool.h"
 
-GameObject GameObject_Create(){
+GameObject GameObject_Create(char* name){
     GameObject gameObject;
     gameObject.component_mask = 0;
     gameObject.componentCount = 0;
+    gameObject.name = name;
     return gameObject;
 }
 bool GameObject_AddComponent(GameObject* gameObject, ComponentPool* componentPool, ComponentType componentType){
     // comparaison bit a bit pour savoir si le gameObject possede deja un component de ce type
     if((gameObject->component_mask & componentType) == componentType){
 #ifdef DEBUG
-        LOG("GameObject_AddComponent::GameObject already have a component of this type");
+        DEBUG_LOG("GameObject_AddComponent::GameObject already have a component of this type");
 #endif
         return false;
     }
@@ -24,7 +25,7 @@ bool GameObject_AddComponent(GameObject* gameObject, ComponentPool* componentPoo
     // On lie le component du componentPool avec le component du GameObject
     gameObject->components[gameObject->componentCount].component_type = componentType;
     if(!ComponentPool_CreateComponent(componentPool, componentType, &gameObject->components[gameObject->componentCount].component_adress)){
-        LOG("Erreur de creation de component dans le ComponentPool !\n");
+        DEBUG_LOG("Erreur de creation de component dans le ComponentPool !\n");
         return false;
     }
 
@@ -44,4 +45,9 @@ void* GameObject_GetComponent(GameObject* gameObject, ComponentPool* componentPo
         }
     }
     return NULL;
+}
+void GameObject_updateComponents(GameObject* gameObject, ComponentPool* componentPool, float deltaTime) {
+    for(int i = 0; i < gameObject->componentCount; i++){
+        ComponentPool_UpdateComponent(componentPool, gameObject->components[i].component_type, GameObject_GetComponent(gameObject, componentPool, gameObject->components[i].component_type), gameObject, deltaTime);
+    }
 }

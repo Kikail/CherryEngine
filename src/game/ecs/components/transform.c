@@ -3,7 +3,7 @@
 //
 
 #include "stdio.h"
-#include "../gameObject.h"
+#include "../../scene/gameObject.h"
 #include "transform.h"
 
 #include "transform.h"

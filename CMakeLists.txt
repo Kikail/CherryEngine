@@ -64,8 +64,8 @@ add_executable(CherryEngine
         src/game/ecs/components/playerController.h
         src/utils/types.h
         src/game/ecs/component.h
-        src/game/ecs/gameObject.c
-        src/game/ecs/gameObject.h
+        src/game/scene/gameObject.c
+        src/game/scene/gameObject.h
         src/utils/maths/Vector3.c
         src/utils/maths/Vector3.h
         src/render/camera.c
@@ -91,6 +91,8 @@ add_executable(CherryEngine
         src/render/instanceMesh.c
         src/render/material.h
         src/render/material.c
+        src/game/scene/scene.h
+        src/game/scene/scene.c
 )
 
 # Configuration de l'inclusion des headers

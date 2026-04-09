@@ -2,7 +2,7 @@
 // Created by killian on 3/11/26.
 //
 #include "stdio.h"
-#include "../gameObject.h"
+#include "../../scene/gameObject.h"
 #include "transform.h"
 #include "playerController.h"
 

@@ -5,8 +5,16 @@
 #ifndef CHERRYENGINE_UTILS_H
 #define CHERRYENGINE_UTILS_H
 
-#define LOG(x) printf("%s\n",x)
-#define isValid(x) ((x==NULL) ? LOG("Not Valid") : LOG("Valid"))
+#define DEBUG_LOG(x) printf("%s\n",x)
+#define DEBUG_isValid(x) ((x==NULL) ? DEBUG_LOG("Not Valid") : DEBUG_LOG("Valid"))
+#define DEBUG_showName(x) printf("%s\n",x->name)
+#define DEBUG_AddGameObjectComponent(x, y, z) \
+if (GameObject_AddComponent(x, y, z)) {\
+        DEBUG_LOG("SUCCESS");\
+    }\
+else {\
+    DEBUG_LOG("ERROR");\
+}
 
 // Comment this line to disable DEBUG mode
 #define DEBUG

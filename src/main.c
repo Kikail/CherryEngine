@@ -13,13 +13,14 @@
 #include "cglm/cam.h"
 #include "resource/shapes/shape.h"
 #include "game/ecs/componentPool.h"
-#include "game/ecs/gameObject.h"
+#include "game/scene/gameObject.h"
 #include "physics/physicsWorld.h"
 #include "render/camera.h"
 #include "render/instanceMesh.h"
 #include "render/material.h"
 #include "render/model.h"
 #include "render/shader.h"
+#include "game/scene/scene.h"
 
 #define WIDTH  1280
 #define HEIGHT 720
@@ -140,6 +141,27 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
 // ==========================================
 int main(int argc, char** argv)
 {
+    // Testing des scenes
+    ComponentPool component_pool = ComponentPool_Create();
+    DEBUG_LOG("Creating the component pool");
+
+    Scene* scene = Scene_create("testScene");
+    DEBUG_showName(scene);
+    GameObject* gameObject = Scene_addGameObject(scene, "GameObject01");
+    DEBUG_showName(gameObject);
+    DEBUG_AddGameObjectComponent(gameObject, &component_pool, COMPONENT_MESH_RENDERER)
+    DEBUG_AddGameObjectComponent(gameObject, &component_pool, COMPONENT_SPRITE_RENDERER)
+    MeshRenderer* mesh_renderer = GameObject_GetComponent(gameObject, &component_pool, COMPONENT_MESH_RENDERER);
+    MeshRenderer* spriteRenderer = GameObject_GetComponent(gameObject, &component_pool, COMPONENT_SPRITE_RENDERER);
+    DEBUG_isValid(mesh_renderer);
+    DEBUG_isValid(spriteRenderer);
+
+    GameObject* gameObject2 = Scene_addGameObject(scene, "GameObject02");
+    DEBUG_AddGameObjectComponent(gameObject2, &component_pool, COMPONENT_MESH_RENDERER)
+
+    GameObject* gameObject3 = Scene_addGameObject(scene, "GameObject03");
+    DEBUG_AddGameObjectComponent(gameObject3, &component_pool, COMPONENT_MESH_RENDERER)
+
     srand((unsigned int)time(NULL));
 
     // Initialisation Factice de ta structure Camera (si processInput en a besoin)
@@ -154,7 +176,7 @@ int main(int argc, char** argv)
 
     // GLFW init
     if (!glfwInit()) {
-        LOG("Failed to initialize GLFW");
+        DEBUG_LOG("Failed to initialize GLFW");
         return EXIT_FAILURE;
     }
 
@@ -164,7 +186,7 @@ int main(int argc, char** argv)
 
     GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "CherryEngine", NULL, NULL);
     if (window == NULL) {
-        LOG("Failed to create GLFW window");
+        DEBUG_LOG("Failed to create GLFW window");
         glfwTerminate();
         return EXIT_FAILURE;
     }
@@ -178,7 +200,7 @@ int main(int argc, char** argv)
     glfwSetScrollCallback(window, scroll_callback);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-        LOG("Erreur de Init Glad");
+        DEBUG_LOG("Erreur de Init Glad");
         cleanup(window);
         return EXIT_FAILURE;
     }
@@ -194,14 +216,14 @@ int main(int argc, char** argv)
     if (!Shader_load(&shader,
                 GetPath("shaders/testingModels.vs"),
                 GetPath("shaders/testingModels.fs") )) {
-        LOG("Erreur de chargement des shaders testingModels");
+        DEBUG_LOG("Erreur de chargement des shaders testingModels");
     }
 
     Shader shaderSkybox;
     if (!Shader_load(&shaderSkybox,
                 GetPath("shaders/skybox.vs"),
                 GetPath("shaders/skybox.fs") )) {
-        LOG("Erreur de chargement des shaders skybox");
+        DEBUG_LOG("Erreur de chargement des shaders skybox");
     }
 
     Model modelCube = Model_create(
@@ -210,28 +232,24 @@ int main(int argc, char** argv)
     );
 
     Model model = Model_create(
-        GetPath("models/plane.obj"),
+        GetPath("models/test.obj"),
         false
     );
     vec2s textureSize;
-    unsigned int diffuseId = TextureFromFile(GetPath("images/testingMaterial/Rocks001_1K-PNG_Color.png"), false, &textureSize);
-    unsigned int normalId = TextureFromFile(GetPath("images/testingMaterial/Rocks001_1K-PNG_NormalGL.png"), false, &textureSize);
-    unsigned int aoId = TextureFromFile(GetPath("images/testingMaterial/Rocks001_1K-PNG_AmbientOcclusion.png"), false, &textureSize);
-    unsigned int displacementId = TextureFromFile(GetPath("images/testingMaterial/Rocks001_1K-PNG_Displacement.png"), false, &textureSize);
+    //unsigned int diffuseId = TextureFromFile(GetPath("images/testingMaterial/Rocks001_1K-PNG_Color.png"), false, &textureSize);
+    //unsigned int normalId = TextureFromFile(GetPath("images/testingMaterial/Rocks001_1K-PNG_NormalGL.png"), false, &textureSize);
+    //unsigned int aoId = TextureFromFile(GetPath("images/testingMaterial/Rocks001_1K-PNG_AmbientOcclusion.png"), false, &textureSize);
+    //unsigned int displacementId = TextureFromFile(GetPath("images/testingMaterial/Rocks001_1K-PNG_Displacement.png"), false, &textureSize);
     Material material = Material_create(
-        (vec3s){0.70,0.45,0.0},
+        (vec3s){1.0,0.0,1.0},
         (vec3s){1.0,1.0,1.0},
         (vec3s){0.5,0.5,0.5},
         16.00,
         1.0,
-        0.05,
-        0.03,
+        0.35,
+        0.75,
         &shader
     );
-    Material_attachNormalTexture(&material, normalId);
-    Material_attachDisplacementTexture(&material, displacementId);
-    Material_attachAoTexture(&material, aoId);
-
 
     char* faces[6] = {
         GetPath("images/skybox/right.jpg"),
@@ -251,7 +269,7 @@ int main(int argc, char** argv)
 
     // On centre l'objet à 0,0,0 pour que la caméra orbite parfaitement autour de lui
     Transform_setPosition(ptr, (vec3s){ 0.0f, 0.0, 0.0f });
-    float scale = 10.0f;
+    float scale = 0.1f;
     Transform_setScale(ptr, (vec3s){scale, scale, scale});
 
     float timeCheck = 0.0f;
@@ -331,6 +349,8 @@ int main(int argc, char** argv)
         Material_sendToShader(&material, &shader);
 
         Model_Draw(&modelCube, &shader);
+
+        Scene_updateScene(scene, &component_pool, deltaTime);
 
         timeCheck += deltaTime;
         nbFrames++;
