@@ -5,6 +5,7 @@
 
 #include <string.h>
 
+
 Mesh Mesh_create(Vertex* vertices, unsigned int nbVertices, unsigned int* indices, unsigned int nbIndices, Texture* textures, unsigned int nbTextures) {
     Mesh mesh;
     mesh.vertices = vertices;

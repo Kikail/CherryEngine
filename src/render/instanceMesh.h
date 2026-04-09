@@ -5,6 +5,7 @@
 #ifndef CHERRYENGINE_INSTANCEMESH_H
 #define CHERRYENGINE_INSTANCEMESH_H
 
+#include "glad/glad.h"
 #include <cglm/struct.h>
 #include "model.h"
 

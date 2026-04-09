@@ -3,6 +3,7 @@
 //
 #include "instanceMesh.h"
 
+
 InstanceMesh* InstanceMesh_create(Model* m) {
     // On sort proprement si il n'y a pas de Model de load
     if (m == NULL) {return NULL;}

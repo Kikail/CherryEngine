@@ -10,6 +10,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "glad/glad.h"
+
 unsigned int TextureFromFile(char* path, bool gamma, vec2s* size) {
     unsigned int textureID;
     glGenTextures(1, &textureID);

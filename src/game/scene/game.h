@@ -5,10 +5,11 @@
 #ifndef CHERRYENGINE_GAME_H
 #define CHERRYENGINE_GAME_H
 
-#include "GLFW/glfw3.h"
+
 #include "physics/physicsWorld.h"
 #include "render/camera.h"
 #include "../../resource/resourceManager.h"
+#include "GLFW/glfw3.h"
 
 /**
  * \brief Une structure de donnee regroupant toutes les infos utiles pour les components

@@ -5,10 +5,11 @@
 #ifndef CHERRYENGINE_MATERIAL_H
 #define CHERRYENGINE_MATERIAL_H
 
+#include "glad/glad.h"
 #include <cglm/struct.h>
-
 #include "mesh.h"
 #include "shader.h"
+
 
 typedef struct Material_t{
     bool usingDiffuseTexture;

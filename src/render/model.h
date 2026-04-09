@@ -5,12 +5,12 @@
 #ifndef CHERRYENGINE_MODEL_H
 #define CHERRYENGINE_MODEL_H
 
-#include <glad/glad.h>
 #include <cglm/struct.h>
 #include <assimp/cimport.h>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include "mesh.h"
+
 
 #define MAX_TEXTURES_PER_MODEL 16
 

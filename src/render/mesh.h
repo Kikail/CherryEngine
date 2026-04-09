@@ -5,9 +5,8 @@
 #ifndef CHERRYENGINE_MESH_H
 #define CHERRYENGINE_MESH_H
 
-#include <glad/glad.h>
+#include "glad/glad.h"
 #include <cglm/struct.h>
-
 #include "shader.h"
 
 typedef struct Vertex_t {

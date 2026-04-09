@@ -4,16 +4,15 @@
 #include <string.h>
 #include <time.h>
 
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-
 #include <math.h>
 #include <cglm/struct.h>
+
+#include "game/scene/game.h"
 
 #include "cglm/cam.h"
 #include "resource/shapes/shape.h"
 #include "game/ecs/componentPool.h"
-#include "game/scene/game.h"
+
 #include "game/scene/gameObject.h"
 #include "physics/physicsWorld.h"
 #include "render/camera.h"
@@ -41,19 +40,6 @@ static float camRadius = 5.0f; // Distance (Zoom)
 
 vec3s lightPos = {1.5, 1.5, 1.5};
 
-// ==========================================
-// FONCTIONS UTILITAIRES
-// ==========================================
-static char* GetPath(const char* file) {
-    size_t pathLen = strlen(RESOURCES_PATH) + 1 + strlen(file) + 1;
-    char* finalPath = malloc(pathLen);
-    if (finalPath == NULL) {
-        perror("Erreur d'allocation mémoire");
-        return NULL;
-    }
-    snprintf(finalPath, pathLen, "%s/%s", RESOURCES_PATH, file);
-    return finalPath;
-}
 
 static void cleanup(GLFWwindow* window)
 {
@@ -212,35 +198,21 @@ int main(int argc, char** argv)
     float lastFrame = 0.0f;
     float currentFrame = 0.0f;
 
-    // Chargement des ressources
-    Shader shader;
-    if (!Shader_load(&shader,
-                GetPath("shaders/testingModels.vs"),
-                GetPath("shaders/testingModels.fs") )) {
-        DEBUG_LOG("Erreur de chargement des shaders testingModels");
-    }
+    ////////////////////////////////////////////////////
+    ///     Chargement des donnees
+    ////////////////////////////////////////////////////
+    ResourceManager* resourceManager = ResourceManager_create();
+    Shader* shader = ResourceManager_loadShader(resourceManager,"shaders/testingModels.vs","shaders/testingModels.fs");
+    Shader* shaderSkybox = ResourceManager_loadShader(resourceManager,"shaders/skybox.vs","shaders/skybox.fs");
+    Model* modelCube = ResourceManager_loadModel(resourceManager,"models/cube.obj");
+    Model* model = ResourceManager_loadModel(resourceManager,"models/test.obj");
+    unsigned int diffuseId = ResourceManager_loadTexture(resourceManager,"images/testingMaterial/Rocks001_1K-PNG_Color.png");
+    unsigned int normalId = ResourceManager_loadTexture(resourceManager,"images/testingMaterial/Rocks001_1K-PNG_NormalGL.png");
+    unsigned int aoId = ResourceManager_loadTexture(resourceManager,"images/testingMaterial/Rocks001_1K-PNG_AmbientOcclusion.png");
+    unsigned int displacementId = ResourceManager_loadTexture(resourceManager,"images/testingMaterial/Rocks001_1K-PNG_Displacement.png");
 
-    Shader shaderSkybox;
-    if (!Shader_load(&shaderSkybox,
-                GetPath("shaders/skybox.vs"),
-                GetPath("shaders/skybox.fs") )) {
-        DEBUG_LOG("Erreur de chargement des shaders skybox");
-    }
 
-    Model modelCube = Model_create(
-        GetPath("models/cube.obj"),
-        false
-    );
 
-    Model model = Model_create(
-        GetPath("models/test.obj"),
-        false
-    );
-    vec2s textureSize;
-    //unsigned int diffuseId = TextureFromFile(GetPath("images/testingMaterial/Rocks001_1K-PNG_Color.png"), false, &textureSize);
-    //unsigned int normalId = TextureFromFile(GetPath("images/testingMaterial/Rocks001_1K-PNG_NormalGL.png"), false, &textureSize);
-    //unsigned int aoId = TextureFromFile(GetPath("images/testingMaterial/Rocks001_1K-PNG_AmbientOcclusion.png"), false, &textureSize);
-    //unsigned int displacementId = TextureFromFile(GetPath("images/testingMaterial/Rocks001_1K-PNG_Displacement.png"), false, &textureSize);
     Material material = Material_create(
         (vec3s){1.0,0.0,1.0},
         (vec3s){1.0,1.0,1.0},
@@ -249,7 +221,7 @@ int main(int argc, char** argv)
         1.0,
         0.35,
         0.75,
-        &shader
+        shader
     );
 
     char* faces[6] = {
@@ -277,7 +249,6 @@ int main(int argc, char** argv)
     int nbFrames = 0;
 
     PhysicsWorld* physics_world = PhysicsWorld_create();
-    ResourceManager* resourceManager = ResourceManager_create();
     Game* game = Game_init(&camera, window, physics_world, resourceManager);
 
     // ==========================================
@@ -318,44 +289,44 @@ int main(int argc, char** argv)
         viewSkybox.raw[3][1] = 0.0f; // Annule Y
         viewSkybox.raw[3][2] = 0.0f; // Annule Z
         glDepthMask(GL_FALSE);
-        Shader_use(&shaderSkybox);
+        Shader_use(shaderSkybox);
         glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
-        Shader_setMat4(&shaderSkybox, "projection", perspective);
-        Shader_setMat4(&shaderSkybox, "view", viewSkybox);
-        Model_Draw(&modelCube, &shaderSkybox);
+        Shader_setMat4(shaderSkybox, "projection", perspective);
+        Shader_setMat4(shaderSkybox, "view", viewSkybox);
+        Model_Draw(modelCube, shaderSkybox);
         glDepthMask(GL_TRUE);
 
         // Rendu
-        Shader_use(&shader);
+        Shader_use(shader);
         glActiveTexture(GL_TEXTURE5);
         glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
-        Shader_setInt(&shader, "skybox", 5);
-        Shader_setMat4(&shader, "projection", perspective);
-        Shader_setMat4(&shader, "view", view);
-        Shader_setMat4(&shader, "model", Transform_getWorldMatrix(&modelTransform));
-        Shader_setVec3(&shader, "lightPos", lightPos);
-        Shader_setVec3(&shader, "viewPos", camPos);
-        Material_sendToShader(&material, &shader);
-        Model_Draw(&model, &shader);
+        Shader_setInt(shader, "skybox", 5);
+        Shader_setMat4(shader, "projection", perspective);
+        Shader_setMat4(shader, "view", view);
+        Shader_setMat4(shader, "model", Transform_getWorldMatrix(&modelTransform));
+        Shader_setVec3(shader, "lightPos", lightPos);
+        Shader_setVec3(shader, "viewPos", camPos);
+        Material_sendToShader(&material, shader);
+        Model_Draw(model, shader);
 
 
         // Rendu
         mat4s modelView = glms_translate(glms_mat4_identity(), lightPos);
         modelView = glms_scale(modelView, (vec3s){0.1,0.1,0.1});
-        Shader_use(&shader);
+        Shader_use(shader);
         glActiveTexture(GL_TEXTURE5);
         glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
-        Shader_setInt(&shader, "skybox", 5);
-        Shader_setMat4(&shader, "projection", perspective);
-        Shader_setMat4(&shader, "view", view);
-        Shader_setMat4(&shader, "model", modelView);
-        Shader_setVec3(&shader, "lightPos", lightPos);
-        Shader_setVec3(&shader, "viewPos", camPos);
-        Material_sendToShader(&material, &shader);
+        Shader_setInt(shader, "skybox", 5);
+        Shader_setMat4(shader, "projection", perspective);
+        Shader_setMat4(shader, "view", view);
+        Shader_setMat4(shader, "model", modelView);
+        Shader_setVec3(shader, "lightPos", lightPos);
+        Shader_setVec3(shader, "viewPos", camPos);
+        Material_sendToShader(&material, shader);
 
-        Model_Draw(&modelCube, &shader);
+        Model_Draw(modelCube, shader);
 
-        Scene_updateScene(scene, &component_pool, deltaTime);
+        //Scene_updateScene(scene, &component_pool, deltaTime);
 
         timeCheck += deltaTime;
         nbFrames++;
