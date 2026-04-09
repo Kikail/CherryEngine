@@ -13,6 +13,7 @@
 #include "cglm/cam.h"
 #include "resource/shapes/shape.h"
 #include "game/ecs/componentPool.h"
+#include "game/scene/game.h"
 #include "game/scene/gameObject.h"
 #include "physics/physicsWorld.h"
 #include "render/camera.h"
@@ -274,6 +275,10 @@ int main(int argc, char** argv)
 
     float timeCheck = 0.0f;
     int nbFrames = 0;
+
+    PhysicsWorld* physics_world = PhysicsWorld_create();
+    ResourceManager* resourceManager = ResourceManager_create();
+    Game* game = Game_init(&camera, window, physics_world, resourceManager);
 
     // ==========================================
     // BOUCLE DE RENDU

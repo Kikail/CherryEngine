@@ -93,6 +93,10 @@ add_executable(CherryEngine
         src/render/material.c
         src/game/scene/scene.h
         src/game/scene/scene.c
+        src/game/scene/game.h
+        src/resource/resourceManager.h
+        src/game/scene/game.c
+        src/resource/resourceManager.c
 )
 
 # Configuration de l'inclusion des headers
