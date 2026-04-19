@@ -10,6 +10,7 @@
 #define RESOURCE_MAX_MODELS 32
 #include <stdio.h>
 
+#include "filePicker.h"
 #include "render/model.h"
 #include "render/shader.h"
 
@@ -23,6 +24,29 @@ static char* GetPath(const char* file) {
     snprintf(finalPath, pathLen, "%s/%s", RESOURCES_PATH, file);
     return finalPath;
 }
+
+
+
+
+typedef enum CherryResourceType_t {
+    CHERRY_RESOURCE_TYPE_NONE,
+    CHERRY_RESOURCE_TYPE_TEXTURE,
+    CHERRY_RESOURCE_TYPE_SHADER,
+    CHERRY_RESOURCE_TYPE_MODEL
+}CherryResourceType_t;
+
+typedef struct CherryResource_t {
+    char path[CHERRY_MAX_FILEPATH_LENGTH];
+    CherryResourceType_t type;
+    unsigned int index;
+}CherryResource_t;
+// Cette structure va nous permettre de debug les noms des fichiers charger et de garder ume structure propre
+// dans notre projet, Nous pouvons acceder au type et au chemin dans l ordinateur de chaque ressource chargee
+// A IMPLEMENTER
+
+
+
+
 
 typedef struct ResourceManager_t {
     unsigned int textures[RESOURCE_MAX_TEXTURES]; unsigned int numTextures;

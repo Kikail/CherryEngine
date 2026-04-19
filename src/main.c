@@ -76,12 +76,6 @@ int main(int argc, char** argv)
     ResourceManager* resourceManager = Game_getResourceManager(game);
     Shader* shader = ResourceManager_loadShader(resourceManager,"shaders/testingModels.vs","shaders/testingModels.fs", false);
     Shader* shaderSkybox = ResourceManager_loadShader(resourceManager,"shaders/skybox.vs","shaders/skybox.fs", false);
-    Model* modelCube = ResourceManager_loadModel(resourceManager,"models/cube.obj", false);
-    Model* model = ResourceManager_loadModel(resourceManager,"models/test.obj", false);
-    unsigned int diffuseId = ResourceManager_loadTexture(resourceManager,"images/testingMaterial/Rocks001_1K-PNG_Color.png", false);
-    unsigned int normalId = ResourceManager_loadTexture(resourceManager,"images/testingMaterial/Rocks001_1K-PNG_NormalGL.png", false);
-    unsigned int aoId = ResourceManager_loadTexture(resourceManager,"images/testingMaterial/Rocks001_1K-PNG_AmbientOcclusion.png", false);
-    unsigned int displacementId = ResourceManager_loadTexture(resourceManager,"images/testingMaterial/Rocks001_1K-PNG_Displacement.png", false);
     char* faces[6] = {
         GetPath("images/skybox/right.jpg"),
         GetPath("images/skybox/left.jpg"),
@@ -166,7 +160,7 @@ int main(int argc, char** argv)
         glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
         Shader_setMat4(shaderSkybox, "projection", Game_getPerspective(game));
         Shader_setMat4(shaderSkybox, "view", viewSkybox);
-        Model_Draw(modelCube, shaderSkybox);
+        Model_Draw(&resourceManager->models[0], shaderSkybox);
         glDepthMask(GL_TRUE);
 
         // Rendu
@@ -180,7 +174,7 @@ int main(int argc, char** argv)
         Shader_setVec3(shader, "lightPos", lightPos);
         Shader_setVec3(shader, "viewPos", camPos);
         Material_sendToShader(&material, shader);
-        Model_Draw(model, shader);
+        Model_Draw(&resourceManager->models[1], shader);
 
 
         // Rendu
@@ -197,7 +191,7 @@ int main(int argc, char** argv)
         Shader_setVec3(shader, "viewPos", camPos);
         Material_sendToShader(&material, shader);
 
-        Model_Draw(modelCube, shader);
+        Model_Draw(&resourceManager->models[0], shader);
 
         //Scene_updateScene(scene, &component_pool, deltaTime);
 
