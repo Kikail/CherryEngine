@@ -21,6 +21,7 @@
 #include "render/model.h"
 #include "render/shader.h"
 #include "game/scene/scene.h"
+#include "resource/filePicker.h"
 
 
 vec3s lightPos = {1.5, 1.5, 1.5};
@@ -58,13 +59,6 @@ int main(int argc, char** argv)
     srand((unsigned int)time(NULL));
 
 
-
-
-
-
-
-
-
     float deltaTime = 0.0f;
     float lastFrame = 0.0f;
     float currentFrame = 0.0f;
@@ -80,14 +74,14 @@ int main(int argc, char** argv)
     ///     Chargement des donnees
     ////////////////////////////////////////////////////
     ResourceManager* resourceManager = Game_getResourceManager(game);
-    Shader* shader = ResourceManager_loadShader(resourceManager,"shaders/testingModels.vs","shaders/testingModels.fs");
-    Shader* shaderSkybox = ResourceManager_loadShader(resourceManager,"shaders/skybox.vs","shaders/skybox.fs");
-    Model* modelCube = ResourceManager_loadModel(resourceManager,"models/cube.obj");
-    Model* model = ResourceManager_loadModel(resourceManager,"models/test.obj");
-    unsigned int diffuseId = ResourceManager_loadTexture(resourceManager,"images/testingMaterial/Rocks001_1K-PNG_Color.png");
-    unsigned int normalId = ResourceManager_loadTexture(resourceManager,"images/testingMaterial/Rocks001_1K-PNG_NormalGL.png");
-    unsigned int aoId = ResourceManager_loadTexture(resourceManager,"images/testingMaterial/Rocks001_1K-PNG_AmbientOcclusion.png");
-    unsigned int displacementId = ResourceManager_loadTexture(resourceManager,"images/testingMaterial/Rocks001_1K-PNG_Displacement.png");
+    Shader* shader = ResourceManager_loadShader(resourceManager,"shaders/testingModels.vs","shaders/testingModels.fs", false);
+    Shader* shaderSkybox = ResourceManager_loadShader(resourceManager,"shaders/skybox.vs","shaders/skybox.fs", false);
+    Model* modelCube = ResourceManager_loadModel(resourceManager,"models/cube.obj", false);
+    Model* model = ResourceManager_loadModel(resourceManager,"models/test.obj", false);
+    unsigned int diffuseId = ResourceManager_loadTexture(resourceManager,"images/testingMaterial/Rocks001_1K-PNG_Color.png", false);
+    unsigned int normalId = ResourceManager_loadTexture(resourceManager,"images/testingMaterial/Rocks001_1K-PNG_NormalGL.png", false);
+    unsigned int aoId = ResourceManager_loadTexture(resourceManager,"images/testingMaterial/Rocks001_1K-PNG_AmbientOcclusion.png", false);
+    unsigned int displacementId = ResourceManager_loadTexture(resourceManager,"images/testingMaterial/Rocks001_1K-PNG_Displacement.png", false);
     char* faces[6] = {
         GetPath("images/skybox/right.jpg"),
         GetPath("images/skybox/left.jpg"),
@@ -96,6 +90,8 @@ int main(int argc, char** argv)
         GetPath("images/skybox/front.jpg"),
         GetPath("images/skybox/back.jpg")};
     unsigned int cubemapTexture = loadCubemap(faces, 6);
+
+    ResourceManager_loadAllFilesFromDirectory(resourceManager, "/home/killian/Projects/C/CherryEngine/resources");
 
 
 

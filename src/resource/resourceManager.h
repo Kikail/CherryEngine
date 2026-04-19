@@ -30,8 +30,9 @@ typedef struct ResourceManager_t {
     Model models[RESOURCE_MAX_MODELS]; unsigned int numModels;
 }ResourceManager;
 ResourceManager* ResourceManager_create();
-unsigned int ResourceManager_loadTexture(ResourceManager* resourceManager, const char* texturePath);
-Shader* ResourceManager_loadShader(ResourceManager* resourceManager, const char* vsPath, const char* fsPath);
-Model* ResourceManager_loadModel(ResourceManager* resourceManager, const char* modelPath);
+void ResourceManager_loadAllFilesFromDirectory(ResourceManager* resourceManager, char* directory);
+unsigned int ResourceManager_loadTexture(ResourceManager* resourceManager, const char* texturePath, bool absolutePath);
+Shader* ResourceManager_loadShader(ResourceManager* resourceManager, const char* vsPath, const char* fsPath, bool absolutePath);
+Model* ResourceManager_loadModel(ResourceManager* resourceManager, const char* modelPath, bool absolutePath);
 
 #endif //CHERRYENGINE_RESOURCEMANAGER_H

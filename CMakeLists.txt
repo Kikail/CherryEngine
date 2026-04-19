@@ -99,6 +99,8 @@ add_executable(CherryEngine
         src/resource/resourceManager.c
         src/game/input/input.h
         src/game/input/input.c
+        src/resource/filePicker.h
+        src/resource/filePicker.c
 )
 
 # Configuration de l'inclusion des headers

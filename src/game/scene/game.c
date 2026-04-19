@@ -44,7 +44,7 @@ Game* Game_init() {
 
     Game_initWindow(game);
 
-    game->physicsWorld = PhysicsWorld_create();
+    //game->physicsWorld = PhysicsWorld_create();
     game->resourceManager = ResourceManager_create();
 
 
@@ -59,7 +59,7 @@ Game* Game_init() {
 
 void Game_update(Game* game, float deltaTime) {
     // On actualise le monde physique
-    PhysicsWorld_step(game->physicsWorld, deltaTime);
+    //PhysicsWorld_step(game->physicsWorld, deltaTime);
     // On actualise les inputs
     Input_update(game->input, game->window);
 }
