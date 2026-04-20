@@ -21,9 +21,11 @@ unsigned int ResourceManager_loadTexture(ResourceManager* resourceManager, const
     if (resourceManager->numTextures >= RESOURCE_MAX_TEXTURES) return 0;
     if (absolutePath) {
         resourceManager->textures[resourceManager->numTextures] = TextureFromFile(texturePath,false,NULL);
+        ResourceManager_addResource(resourceManager, texturePath, CHERRY_RESOURCE_TYPE_TEXTURE, resourceManager->numTextures);
     }
     else {
         resourceManager->textures[resourceManager->numTextures] = TextureFromFile(GetPath(texturePath),false,NULL);
+        ResourceManager_addResource(resourceManager, GetPath(texturePath), CHERRY_RESOURCE_TYPE_TEXTURE, resourceManager->numTextures);
     }
     resourceManager->numTextures += 1;
     return resourceManager->textures[resourceManager->numTextures-1];
@@ -31,10 +33,12 @@ unsigned int ResourceManager_loadTexture(ResourceManager* resourceManager, const
 Shader* ResourceManager_loadShader(ResourceManager* resourceManager, const char* vsPath, const char* fsPath, bool absolutePath) {
     if (resourceManager->numShaders >= RESOURCE_MAX_SHADERS) return NULL;
     if (absolutePath) {
-        Shader_load(&resourceManager->shaders[resourceManager->numShaders],vsPath,GetPath(fsPath));
+        Shader_load(&resourceManager->shaders[resourceManager->numShaders],vsPath,fsPath);
+        ResourceManager_addResource(resourceManager, vsPath, CHERRY_RESOURCE_TYPE_SHADER, resourceManager->numShaders);
     }
     else {
         Shader_load(&resourceManager->shaders[resourceManager->numShaders],GetPath(vsPath),GetPath(fsPath));
+        ResourceManager_addResource(resourceManager, GetPath(vsPath), CHERRY_RESOURCE_TYPE_SHADER, resourceManager->numShaders);
     }
     resourceManager->numShaders += 1;
     return &resourceManager->shaders[resourceManager->numShaders-1];
@@ -43,9 +47,11 @@ Model* ResourceManager_loadModel(ResourceManager* resourceManager, const char* m
     if (resourceManager->numModels >= RESOURCE_MAX_MODELS) return NULL;
     if (absolutePath) {
         resourceManager->models[resourceManager->numModels] = Model_create(modelPath,false);
+        ResourceManager_addResource(resourceManager, modelPath, CHERRY_RESOURCE_TYPE_MODEL, resourceManager->numModels);
     }
     else {
         resourceManager->models[resourceManager->numModels] = Model_create(GetPath(modelPath),false);
+        ResourceManager_addResource(resourceManager, GetPath(modelPath), CHERRY_RESOURCE_TYPE_MODEL, resourceManager->numModels);
     }
     resourceManager->numModels += 1;
     return &resourceManager->models[resourceManager->numModels-1];
@@ -65,5 +71,25 @@ void ResourceManager_loadAllFilesFromDirectory(ResourceManager* resourceManager,
             case FILETYPE_OBJ:      ResourceManager_loadModel(resourceManager, file.path, true);break;
             case FILETYPE_NONE:     break;
         }
+    }
+}
+CherryResource* ResourceManager_addResource(ResourceManager* resourceManager, char* path, CherryResourceType type, unsigned int index) {
+    strcpy(resourceManager->resources[resourceManager->numResources].path, path);
+    resourceManager->resources[resourceManager->numResources].type = type;
+    resourceManager->resources[resourceManager->numResources].index = index;
+    resourceManager->numResources += 1;
+    return &resourceManager->resources[resourceManager->numResources-1];
+}
+void ResourceManager_showResources(ResourceManager* resourceManager) {
+    for (int i = 0; i < resourceManager->numResources; i++) {
+        CherryResource* resource = &resourceManager->resources[i];
+        printf("resource %d: ( %s , ",i, resource->path);
+        switch (resource->type) {
+            case CHERRY_RESOURCE_TYPE_MODEL:printf("MODEL"); break;
+            case CHERRY_RESOURCE_TYPE_SHADER:printf("SHADER"); break;
+            case CHERRY_RESOURCE_TYPE_TEXTURE:printf("TEXTURE"); break;
+            case CHERRY_RESOURCE_TYPE_NONE:printf("NONE"); break;
+        }
+        printf(" , index:%d )\n", resource->index);
     }
 }

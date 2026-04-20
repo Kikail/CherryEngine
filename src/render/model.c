@@ -32,7 +32,7 @@ unsigned int TextureFromFile(char* path, bool gamma, vec2s* size) {
         else if (nrComponents == 3) format = GL_RGB;
         else if (nrComponents == 4) format = GL_RGBA;
 
-        printf("Texture loaded successfully at path: %s\n", path);
+        //printf("Texture loaded successfully at path: %s\n", path);
 
         glBindTexture(GL_TEXTURE_2D, textureID);
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1); // Force l'alignement sur 1 octet (indispensable pour le RGB)

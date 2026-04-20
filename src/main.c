@@ -86,8 +86,7 @@ int main(int argc, char** argv)
     unsigned int cubemapTexture = loadCubemap(faces, 6);
 
     ResourceManager_loadAllFilesFromDirectory(resourceManager, "/home/killian/Projects/C/CherryEngine/resources");
-
-
+    ResourceManager_showResources(resourceManager);
 
     Material material = Material_create(
         (vec3s){1.0,0.0,1.0},
