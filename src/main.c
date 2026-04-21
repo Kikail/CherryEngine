@@ -22,11 +22,16 @@
 #include "render/shader.h"
 #include "game/scene/scene.h"
 #include "resource/filePicker.h"
+#include "resource/fileSaver.h"
 
 
 vec3s lightPos = {1.5, 1.5, 1.5};
 
 
+
+
+// PAR LA SUITE :
+// FAIRE DE MACROS POUR FACILITER LA CREATION D OBJETS DANS LA SCENE POUR TOUT FAIRE EN UNE SEULE LIGNE
 
 
 
@@ -63,7 +68,11 @@ int main(int argc, char** argv)
     float lastFrame = 0.0f;
     float currentFrame = 0.0f;
 
-
+    FileSaver* fileSaver = FileSaver_create("/home/killian/Projects/C/CherryEngine/resources/scenes/test.csn", "Voici la premiere ligne\n");
+    FileSaver_addContent(fileSaver, "Voici la seconde ligne\n");
+    FileSaver_addContent(fileSaver, "Voici la troisieme ligne\n");
+    FileSaver_addContent(fileSaver, "Voici la quatrieme ligne\n");
+    FileSaver_save(fileSaver);
 
     Game* game = Game_init();
 
