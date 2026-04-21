@@ -103,6 +103,8 @@ add_executable(CherryEngine
         src/resource/filePicker.c
         src/resource/fileSaver.h
         src/resource/fileSaver.c
+        src/resource/serializer.h
+        src/resource/serializer.c
 )
 
 # Configuration de l'inclusion des headers

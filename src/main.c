@@ -23,6 +23,7 @@
 #include "game/scene/scene.h"
 #include "resource/filePicker.h"
 #include "resource/fileSaver.h"
+#include "resource/serializer.h"
 
 
 vec3s lightPos = {1.5, 1.5, 1.5};
@@ -68,11 +69,14 @@ int main(int argc, char** argv)
     float lastFrame = 0.0f;
     float currentFrame = 0.0f;
 
-    FileSaver* fileSaver = FileSaver_create("/home/killian/Projects/C/CherryEngine/resources/scenes/test.csn", "Voici la premiere ligne\n");
-    FileSaver_addContent(fileSaver, "Voici la seconde ligne\n");
-    FileSaver_addContent(fileSaver, "Voici la troisieme ligne\n");
-    FileSaver_addContent(fileSaver, "Voici la quatrieme ligne\n");
-    FileSaver_save(fileSaver);
+
+
+    FILE* f = fopen("/home/killian/Projects/C/CherryEngine/resources/scenes/test.csn", "r");
+    SerialObject serialObject = SerialObject_DeserializeSingle(f);
+    fclose(f);
+    SerialObject_Print(&serialObject);
+
+
 
     Game* game = Game_init();
 
