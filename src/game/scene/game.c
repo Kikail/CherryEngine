@@ -4,6 +4,11 @@
 #include "game.h"
 
 int Game_initWindow(Game* game) {
+    #ifdef DEBUG
+        if (game == NULL)
+            DEBUG_LOG("GAME::Game_initWindow game is NULL");
+    #endif
+
     // GLFW init
     if (!glfwInit()) {
         DEBUG_LOG("Failed to initialize GLFW");
@@ -33,6 +38,10 @@ int Game_initWindow(Game* game) {
 
 Game* Game_init() {
     Game* game = malloc(sizeof(Game));
+    #ifdef DEBUG
+        if (game == NULL)
+            DEBUG_LOG("GAME::Game_init failed to malloc game");
+    #endif
 
     game->input = Input_create();
 
@@ -47,8 +56,6 @@ Game* Game_init() {
     //game->physicsWorld = PhysicsWorld_create();
     game->resourceManager = ResourceManager_create();
 
-
-
     // Creation de la matrice de perspective
     float aspect = (float)WIDTH / (float)HEIGHT;
     float fov = glm_rad(45.0f);
@@ -58,6 +65,10 @@ Game* Game_init() {
 }
 
 void Game_update(Game* game, float deltaTime) {
+    #ifdef DEBUG
+        if (game == NULL)
+            DEBUG_LOG("GAME::Game_update game is NULL");
+    #endif
     // On actualise le monde physique
     //PhysicsWorld_step(game->physicsWorld, deltaTime);
     // On actualise les inputs
@@ -66,20 +77,44 @@ void Game_update(Game* game, float deltaTime) {
 
 
 Camera* Game_getCamera(Game* game) {
+    #ifdef DEBUG
+        if (game == NULL)
+            DEBUG_LOG("GAME::Game_getCamera game is NULL");
+    #endif
     return &game->camera;
 }
 GLFWwindow* Game_getWindow(Game* game) {
+    #ifdef DEBUG
+        if (game == NULL || game->window == NULL)
+            DEBUG_LOG("GAME::Game_getWindow game or window is NULL");
+    #endif
     return game->window;
 }
 PhysicsWorld* Game_getPhysicsWorld(Game* game) {
+    #ifdef DEBUG
+        if (game == NULL || game->physicsWorld)
+            DEBUG_LOG("GAME::Game_getPhysicsWorld game or physicsWorld is NULL");
+    #endif
     return game->physicsWorld;
 }
 ResourceManager* Game_getResourceManager(Game* game) {
+    #ifdef DEBUG
+        if (game == NULL || game->resourceManager == NULL)
+            DEBUG_LOG("GAME::Game_getResourceManager game or resourceManager is NULL");
+    #endif
     return game->resourceManager;
 }
 mat4s Game_getPerspective(Game* game) {
+    #ifdef DEBUG
+        if (game == NULL)
+            DEBUG_LOG("GAME::Game_getPerspective game is NULL");
+    #endif
     return game->perspective;
 }
 Input* Game_getInput(Game* game) {
+    #ifdef DEBUG
+        if (game == NULL || game->input == NULL)
+            DEBUG_LOG("GAME::Game_getInput game or input is NULL");
+    #endif
     return game->input;
 }

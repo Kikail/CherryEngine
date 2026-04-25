@@ -8,6 +8,7 @@
 #include "utils/types.h"
 
 // On creer le bitmask pour chaque component
+// 32 Components maximum !! car uint32
 typedef enum ComponentType_t{
     COMPONENT_TRANSFORM             = 1 << 0,
     COMPONENT_MESH_RENDERER         = 1 << 1,

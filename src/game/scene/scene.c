@@ -3,14 +3,26 @@
 //
 #include "scene.h"
 
+#include "utils/utils.h"
+
 Scene* Scene_create(char* name) {
     Scene* scene = malloc(sizeof(Scene));
+    #ifdef DEBUG
+        if (scene == NULL)
+            DEBUG_LOG("SCENE::Scene_create failed to malloc scene");
+    #endif
+
     scene->name = name;
     scene->numGameObjects = 0;
     return scene;
 }
 GameObject* Scene_addGameObject(Scene* scene, char* objectName) {
-    if (scene->numGameObjects >= MAX_COMPONENT_PER_OBJECT) return NULL;
+    if (scene->numGameObjects >= MAX_COMPONENT_PER_OBJECT) {
+        #ifdef DEBUG
+            DEBUG_LOG("SCENE::Scene_addGameObject max component reach");
+        #endif
+        return NULL;
+    }
     scene->gameObjects[scene->numGameObjects].name = objectName;
     scene->numGameObjects++;
     return &scene->gameObjects[scene->numGameObjects - 1];

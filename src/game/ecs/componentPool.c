@@ -95,9 +95,9 @@ void* ComponentPool_GetComponent(ComponentPool* componentPool, ComponentType com
 
 void ComponentPool_UpdateComponent(ComponentPool* componentPool, ComponentType componentType, void* component, GameObject* gameObject, float deltaTime){
     if(component == NULL){
-#ifdef DEBUG
-        DEBUG_LOG("ComponentPool_UpdateComponent::Component is NULL");
-#endif
+        #ifdef DEBUG
+                DEBUG_LOG("ComponentPool_UpdateComponent::Component is NULL");
+        #endif
         return;
     }
 

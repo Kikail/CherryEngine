@@ -33,6 +33,7 @@ vec3s lightPos = {1.5, 1.5, 1.5};
 
 // PAR LA SUITE :
 // FAIRE DE MACROS POUR FACILITER LA CREATION D OBJETS DANS LA SCENE POUR TOUT FAIRE EN UNE SEULE LIGNE
+// Faire un grand code cleanup , commenter et tout mettre en mode debug lors de tests pour voir ce qui fail par la suite
 
 
 

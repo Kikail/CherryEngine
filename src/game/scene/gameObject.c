@@ -14,9 +14,9 @@ GameObject GameObject_Create(char* name){
 bool GameObject_AddComponent(GameObject* gameObject, ComponentPool* componentPool, ComponentType componentType){
     // comparaison bit a bit pour savoir si le gameObject possede deja un component de ce type
     if((gameObject->component_mask & componentType) == componentType){
-#ifdef DEBUG
-        DEBUG_LOG("GameObject_AddComponent::GameObject already have a component of this type");
-#endif
+    #ifdef DEBUG
+            DEBUG_LOG("GameObject_AddComponent::GameObject already have a component of this type");
+    #endif
         return false;
     }
     // On ajoute le bit correspondant a ce type de component
@@ -35,18 +35,33 @@ bool GameObject_AddComponent(GameObject* gameObject, ComponentPool* componentPoo
     return true;
 }
 bool GameObject_HasComponent(GameObject* gameObject, ComponentType componentType){
+    #ifdef DEBUG
+        if (gameObject == NULL)
+            DEBUG_LOG("GAMEOBJECT::GameObject_HasComponent gameObject is NULL");
+    #endif
     return (gameObject->component_mask & componentType) == componentType;
 }
 void* GameObject_GetComponent(GameObject* gameObject, ComponentPool* componentPool, ComponentType componentType){
+    #ifdef DEBUG
+        if (gameObject == NULL)
+            DEBUG_LOG("GAMEOBJECT::GameObject_GetComponent gameObject is NULL");
+    #endif
     if(!GameObject_HasComponent(gameObject, componentType))return NULL;
     for(int i = 0; i < gameObject->componentCount; i++){
         if(gameObject->components[i].component_type == componentType){
             return ComponentPool_GetComponent(componentPool, componentType, gameObject->components[i].component_adress);
         }
     }
-    return NULL;
+    #ifdef DEBUG
+        DEBUG_LOG("GAMEOBJECT::GameObject_GetComponent no component of this type");
+    #endif
+        return NULL;
 }
 void GameObject_updateComponents(GameObject* gameObject, ComponentPool* componentPool, float deltaTime) {
+    #ifdef DEBUG
+        if (gameObject == NULL || componentPool == NULL)
+            DEBUG_LOG("GAMEOBJECT::GameObject_updateComponents gameObject or componentPool is NULL");
+    #endif
     for(int i = 0; i < gameObject->componentCount; i++){
         ComponentPool_UpdateComponent(componentPool, gameObject->components[i].component_type, GameObject_GetComponent(gameObject, componentPool, gameObject->components[i].component_type), gameObject, deltaTime);
     }
