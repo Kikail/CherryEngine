@@ -12,7 +12,7 @@ typedef struct {
     char* imagePath;
 } SpriteRenderer;
 
-void Component_SpriteRenderer_Update(
-    SpriteRenderer* transform, GameObject* gameObject);
+void Component_SpriteRenderer_Update(SpriteRenderer* transform, GameObject* gameObject);
+SerialObject SpriteRenderer_serialize(SpriteRenderer* spriteRenderer);
 
 #endif //CHERRYENGINE_SPRITERENDERER_H

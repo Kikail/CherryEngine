@@ -6,6 +6,7 @@
 #define CHERRYENGINE_SCENE_H
 
 #include "gameObject.h"
+#include "resource/serializer.h"
 
 #define SCENE_MAX_GAMEOBJECTS 1000
 
@@ -17,5 +18,6 @@ typedef struct Scene_t {
 Scene* Scene_create(char* name);
 GameObject* Scene_addGameObject(Scene* scene, char* objectName);
 void Scene_updateScene(Scene* scene, ComponentPool* componentPoool, float deltaTime);
+SerialObject Scene_serialize(Scene* scene, ComponentPool* componentPool);
 
 #endif //CHERRYENGINE_SCENE_H

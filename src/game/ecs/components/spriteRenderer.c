@@ -10,3 +10,10 @@
 void Component_SpriteRenderer_Update(SpriteRenderer* transform, GameObject* gameObject) {
     printf("%s MESHRENDERER UPDATE\n", gameObject->name);
 }
+
+SerialObject SpriteRenderer_serialize(SpriteRenderer* spriteRenderer) {
+    SerialObject obj = SerialObject_create("SpriteRenderer");
+
+
+    return obj;
+}

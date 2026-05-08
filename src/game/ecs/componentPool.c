@@ -117,3 +117,26 @@ void ComponentPool_UpdateComponent(ComponentPool* componentPool, ComponentType c
             break;
     }
 }
+
+SerialObject ComponentPool_serialize(ComponentPool* componentPool) {
+    SerialObject componentPoolObject = SerialObject_create("ComponentPool");
+
+    for (int i = 0; i < componentPool->currentTransformCount; i++) {
+        SerialObject transformObject =  Transform_serialize(&componentPool->transforms[i]);
+        SerialObject_AddChild(&componentPoolObject, &transformObject);
+    }
+    for (int i = 0; i < componentPool->currentMeshRendererCount; i++) {
+        SerialObject meshRendererObject =  MeshRenderer_serialize(&componentPool->meshRenderers[i]);
+        SerialObject_AddChild(&componentPoolObject, &meshRendererObject);
+    }
+    for (int i = 0; i < componentPool->currentSpriteRendererCount; i++) {
+        SerialObject spriteRendererObject =  SpriteRenderer_serialize(&componentPool->spriteRenderers[i]);
+        SerialObject_AddChild(&componentPoolObject, &spriteRendererObject);
+    }
+    for (int i = 0; i < componentPool->currentPlayerControllerCount; i++) {
+        SerialObject playerControllerObject =  PlayerController_serialize(&componentPool->playerControllers[i]);
+        SerialObject_AddChild(&componentPoolObject, &playerControllerObject);
+    }
+
+    return componentPoolObject;
+}

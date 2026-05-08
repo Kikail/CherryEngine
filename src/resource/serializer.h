@@ -17,6 +17,7 @@ typedef struct SerialValue_t {
 SerialValue SerialValue_create_int(const char* name, int value);
 SerialValue SerialValue_create_double(const char* name, double value);
 SerialValue SerialValue_create_str(const char* name, const char* value);
+SerialValue SerialValue_create_uint(const char* name, unsigned int value);
 SerialValue SerialValue_parse(const char* serialized);
 
 char* SerialValue_Serialize(const SerialValue* sv);
@@ -25,6 +26,7 @@ const char* SerialValue_GetStringValue(const SerialValue* sv);
 int SerialValue_GetIntValue(const SerialValue* sv);
 double SerialValue_GetDoubleValue(const SerialValue* sv);
 float SerialValue_GetFloatValue(const SerialValue* sv);
+unsigned int SerialValue_GetUintValue(const SerialValue* sv);
 bool SerialValue_IsValid(const SerialValue* sv);
 
 

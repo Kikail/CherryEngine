@@ -7,6 +7,7 @@
 
 #include "utils/utils.h"
 #include "cglm/struct.h"
+#include "resource/serializer.h"
 
 #define TRANSFORM_MAX_CHILDREN 16
 
@@ -61,5 +62,7 @@ void Transform_updateWorldTransform(Transform* transform);
 void Transform_updateLocalTransform(Transform* transform);
 mat4s Transform_getWorldMatrix(Transform* transform);
 bool Transform_isDirty(Transform* transform);
+
+SerialObject Transform_serialize(Transform* transform);
 
 #endif //CHERRYENGINE_TRANSFORM_H

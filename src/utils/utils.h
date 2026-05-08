@@ -23,10 +23,10 @@ printf("%s loaded\n", #x); \
 #define DEBUG_showName(x) printf("%s\n",x->name)
 #define DEBUG_AddGameObjectComponent(x, y, z) \
 if (GameObject_AddComponent(x, y, z)) {\
-        DEBUG_LOG("SUCCESS");\
+        DEBUG_LOG("SUCCESS to add component");\
     }\
 else {\
-    DEBUG_LOG("ERROR");\
+    DEBUG_LOG("Failed to add component");\
 }
 
 #define WIDTH  1280

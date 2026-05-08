@@ -9,3 +9,9 @@
 void Component_MeshRenderer_Update(MeshRenderer* meshRenderer, GameObject* gameObject) {
     printf("%s MESHRENDERER UPDATE\n", gameObject->name);
 }
+SerialObject MeshRenderer_serialize(MeshRenderer* meshRenderer) {
+    SerialObject obj = SerialObject_create("MeshRenderer");
+
+
+    return obj;
+}

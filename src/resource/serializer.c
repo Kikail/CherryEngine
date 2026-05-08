@@ -51,6 +51,15 @@ SerialValue SerialValue_create_int(const char* name, int value) {
     return sv;
 }
 
+SerialValue SerialValue_create_uint(const char* name, unsigned int value) {
+    SerialValue sv;
+    sv.name = strdup(name);
+    char buffer[32];
+    snprintf(buffer, sizeof(buffer), "%d", value);
+    sv.value = strdup(buffer);
+    return sv;
+}
+
 SerialValue SerialValue_create_double(const char* name, double value) {
     SerialValue sv;
     sv.name = strdup(name);
@@ -94,6 +103,7 @@ char* SerialValue_Serialize(const SerialValue* sv) {
 const char* SerialValue_GetName(const SerialValue* sv) { return sv->name; }
 const char* SerialValue_GetStringValue(const SerialValue* sv) { return sv->value; }
 int SerialValue_GetIntValue(const SerialValue* sv) { return atoi(sv->value); }
+unsigned int SerialValue_GetUintValue(const SerialValue* sv) { return atoi(sv->value); }
 double SerialValue_GetDoubleValue(const SerialValue* sv) { return atof(sv->value); }
 float SerialValue_GetFloatValue(const SerialValue* sv) { return (float)atof(sv->value); }
 bool SerialValue_IsValid(const SerialValue* sv) { return strcmp(sv->value, "-1") != 0; }

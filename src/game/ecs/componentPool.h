@@ -15,6 +15,7 @@
 #include "components/meshRenderer.h"
 #include "components/spriteRenderer.h"
 #include "components/playerController.h"
+#include "resource/serializer.h"
 
 typedef struct GameObject_t GameObject;
 typedef enum ComponentType_t ComponentType;
@@ -34,5 +35,7 @@ bool ComponentPool_CheckSpace(ComponentPool* componentPool, ComponentType compon
 bool ComponentPool_CreateComponent(ComponentPool* componentPool, ComponentType componentType, uint32* index);
 void* ComponentPool_GetComponent(ComponentPool* componentPool, ComponentType componentType, uint32 index);
 void ComponentPool_UpdateComponent(ComponentPool* componentPool, ComponentType componentType, void* component, GameObject* gameObject, float deltaTime);
+
+SerialObject ComponentPool_serialize(ComponentPool* componentPool);
 
 #endif //CHERRYENGINE_COMPONENTPOOL_H

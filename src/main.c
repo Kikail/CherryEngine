@@ -46,16 +46,20 @@ int main(int argc, char** argv)
     ///     Testing des scenes
     ////////////////////////////////////////////////////
     ComponentPool component_pool = ComponentPool_Create();
-    DEBUG_LOG("Creating the component pool");
+    DEBUG_LOG("Creating the compone"
+              "5nt pool");
 
     Scene* scene = Scene_create("testScene");
     DEBUG_showName(scene);
     GameObject* gameObject = Scene_addGameObject(scene, "GameObject01");
     DEBUG_showName(gameObject);
     DEBUG_AddGameObjectComponent(gameObject, &component_pool, COMPONENT_MESH_RENDERER)
+    DEBUG_AddGameObjectComponent(gameObject, &component_pool, COMPONENT_TRANSFORM)
     DEBUG_AddGameObjectComponent(gameObject, &component_pool, COMPONENT_SPRITE_RENDERER)
     MeshRenderer* mesh_renderer = GameObject_GetComponent(gameObject, &component_pool, COMPONENT_MESH_RENDERER);
     MeshRenderer* spriteRenderer = GameObject_GetComponent(gameObject, &component_pool, COMPONENT_SPRITE_RENDERER);
+    Transform* tranformComp = GameObject_GetComponent(gameObject, &component_pool, COMPONENT_TRANSFORM);
+    Transform_translate(tranformComp, (vec3s){3.0,10.0,0.0}, false);
     DEBUG_isValid(mesh_renderer);
     DEBUG_isValid(spriteRenderer);
     GameObject* gameObject2 = Scene_addGameObject(scene, "GameObject02");
@@ -77,7 +81,10 @@ int main(int argc, char** argv)
     fclose(f);
     SerialObject_Print(&serialObject);
 
-
+    SerialObject sceneObj = Scene_serialize(scene, &component_pool);
+    SerialObject_Print(&sceneObj);
+    FileSaver* fileSaver = FileSaver_create("/home/killian/Projects/C/CherryEngine/resources/scenes/test.csn", SerialObject_Serialize(&sceneObj));
+    FileSaver_save(fileSaver);
 
     Game* game = Game_init();
 

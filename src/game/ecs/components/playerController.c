@@ -57,3 +57,10 @@ void Component_PlayerController_Update(PlayerController* pc, GameObject* gameObj
     // On enlève le -10.0 en Z pour être DANS le personnage
     pc->camera->position = glms_vec3_add(pc->physicsObject->Transform.position, (vec3s){0.0f, 1.5f, 0.0f});
 }
+
+SerialObject PlayerController_serialize(PlayerController* playerController) {
+    SerialObject obj = SerialObject_create("PlayerController");
+
+
+    return obj;
+}

@@ -271,3 +271,37 @@ mat4s Transform_getWorldMatrix(Transform* transform) {
 bool Transform_isDirty(Transform* transform) {
     return transform ? transform->isDirty : false;
 }
+
+// ==========================================================
+// SERIALIZATION
+// ==========================================================
+
+SerialObject Transform_serialize(Transform* transform) {
+    SerialObject transformObject = SerialObject_create("Transform");
+
+    SerialValue posx = SerialValue_create_double("posx", transform->position.x);
+    SerialValue posy = SerialValue_create_double("posy", transform->position.y);
+    SerialValue posz = SerialValue_create_double("posz", transform->position.z);
+    SerialValue rotx = SerialValue_create_double("rotx", transform->rotation.x);
+    SerialValue roty = SerialValue_create_double("roty", transform->rotation.y);
+    SerialValue rotz = SerialValue_create_double("rotz", transform->rotation.z);
+    SerialValue rotw = SerialValue_create_double("rotw", transform->rotation.w);
+    SerialValue scalex = SerialValue_create_double("scalex", transform->scale.x);
+    SerialValue scaley = SerialValue_create_double("scaley", transform->scale.y);
+    SerialValue scalez = SerialValue_create_double("scalez", transform->scale.z);
+
+    SerialObject_AddSerialValue(&transformObject, &posx);
+    SerialObject_AddSerialValue(&transformObject, &posy);
+    SerialObject_AddSerialValue(&transformObject, &posz);
+    SerialObject_AddSerialValue(&transformObject, &rotx);
+    SerialObject_AddSerialValue(&transformObject, &roty);
+    SerialObject_AddSerialValue(&transformObject, &rotz);
+    SerialObject_AddSerialValue(&transformObject, &rotw);
+    SerialObject_AddSerialValue(&transformObject, &scalex);
+    SerialObject_AddSerialValue(&transformObject, &scaley);
+    SerialObject_AddSerialValue(&transformObject, &scalez);
+
+    // IL MANQUE LES INFOS SUR LE PARENT
+
+    return transformObject;
+}

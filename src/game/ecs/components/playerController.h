@@ -21,5 +21,6 @@ typedef struct {
 
 void Component_PlayerController_Init(PlayerController* playerController, PhysicsObject* physicsObject, Camera* camera, GLFWwindow *window);
 void Component_PlayerController_Update(PlayerController* PlayerController, GameObject* gameObject, float deltaTime);
+SerialObject PlayerController_serialize(PlayerController* playerController);
 
 #endif //CHERRYENGINE_PLAYERCONTROLLER_H
