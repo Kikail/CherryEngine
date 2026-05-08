@@ -7,6 +7,7 @@
 
 #include "gameObject.h"
 #include "resource/serializer.h"
+#include "utils/idMaker.h"
 
 #define SCENE_MAX_GAMEOBJECTS 1000
 

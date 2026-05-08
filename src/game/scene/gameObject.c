@@ -3,6 +3,7 @@
 //
 #include "../scene/gameObject.h"
 #include "../ecs/componentPool.h"
+#include "utils/idMaker.h"
 
 GameObject GameObject_Create(char* name){
     GameObject gameObject;
@@ -27,6 +28,15 @@ bool GameObject_AddComponent(GameObject* gameObject, ComponentPool* componentPoo
     if(!ComponentPool_CreateComponent(componentPool, componentType, &gameObject->components[gameObject->componentCount].component_adress)){
         DEBUG_LOG("Erreur de creation de component dans le ComponentPool !\n");
         return false;
+    }
+
+    if (Id_createId(&gameObject->components[gameObject->componentCount].id)) {
+
+    }
+    else {
+        #ifdef DEBUG
+                DEBUG_LOG("GAMEOEBJECT::GameObject_AddComponent max id reached");
+        #endif
     }
 
     // On oublie pas d'augmenter le nombre de components

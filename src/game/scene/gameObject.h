@@ -20,6 +20,10 @@ typedef struct GameObject_t {
     uint32 component_mask;
     Component components[MAX_COMPONENT_PER_OBJECT]; uint32 componentCount;
     char* name;
+
+    // un id fonctionne de la sorte 10000000 00000000 00000000 00000000
+    // 1 au debut si gameObject 0 sinon
+    unsigned int id;
 } GameObject;
 
 GameObject GameObject_Create(char* name);

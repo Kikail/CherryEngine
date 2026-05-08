@@ -36,6 +36,6 @@ bool ComponentPool_CreateComponent(ComponentPool* componentPool, ComponentType c
 void* ComponentPool_GetComponent(ComponentPool* componentPool, ComponentType componentType, uint32 index);
 void ComponentPool_UpdateComponent(ComponentPool* componentPool, ComponentType componentType, void* component, GameObject* gameObject, float deltaTime);
 
-SerialObject ComponentPool_serialize(ComponentPool* componentPool);
+SerialObject ComponentPool_serializeComponent(ComponentPool* componentPool, ComponentType componentType, uint32 index);
 
 #endif //CHERRYENGINE_COMPONENTPOOL_H

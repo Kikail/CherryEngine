@@ -4,6 +4,7 @@
 #include "scene.h"
 
 #include "game/ecs/componentPool.h"
+#include "utils/idMaker.h"
 #include "utils/utils.h"
 
 Scene* Scene_create(char* name) {
@@ -18,13 +19,21 @@ Scene* Scene_create(char* name) {
     return scene;
 }
 GameObject* Scene_addGameObject(Scene* scene, char* objectName) {
-    if (scene->numGameObjects >= MAX_COMPONENT_PER_OBJECT) {
+    if (scene->numGameObjects >= SCENE_MAX_GAMEOBJECTS) {
         #ifdef DEBUG
             DEBUG_LOG("SCENE::Scene_addGameObject max component reach");
         #endif
         return NULL;
     }
     scene->gameObjects[scene->numGameObjects].name = objectName;
+    if (Id_createId(&scene->gameObjects[scene->numGameObjects].id)) {
+        scene->gameObjects[scene->numGameObjects].id = Id_makeGameObject(scene->gameObjects[scene->numGameObjects].id);
+    }
+    else {
+        #ifdef DEBUG
+            DEBUG_LOG("SCENE::Scene_addGameObject max id reached");
+        #endif
+    }
     scene->numGameObjects++;
     return &scene->gameObjects[scene->numGameObjects - 1];
 }
@@ -44,18 +53,34 @@ SerialObject Scene_serialize(Scene* scene, ComponentPool* componentPool) {
     SerialObject sceneObject = SerialObject_create("Scene");
 
     SerialObject gameobjectsObject = SerialObject_create("GameObjects");
-    SerialObject componentPoolObject = ComponentPool_serialize(componentPool);
+    SerialObject componentPoolObject = SerialObject_create("ComponentPool");
 
     // Sauvegarde de chaque gameObject
     for (int i = 0; i < scene->numGameObjects; i++) {
-        printf(" OBJECT %d\n",i);
         GameObject gameObject = scene->gameObjects[i];
-        SerialObject gameObjectSerial = SerialObject_create(gameObject.name);
-        SerialValue mask = SerialValue_create_uint("componentMask",gameObject.component_mask);
-        SerialValue id = SerialValue_create_int("id", i);
-        SerialObject_AddSerialValue(&gameObjectSerial, &mask);
-        SerialObject_AddSerialValue(&gameObjectSerial, &id);
-        SerialObject_AddChild(&gameobjectsObject, &gameObjectSerial);
+
+
+        for (int j = 0; j < gameObject.componentCount; j++) {
+
+            Component component = gameObject.components[j];
+             // Ici il faudrait avoir un serial object du component mais de maniere abstraire comme le component pool
+            // Puis ensuite ajouter l'id qui est dans component
+            SerialObject componentObject = ComponentPool_serializeComponent(componentPool, component.component_type, component.component_adress);
+            SerialValue idValue = SerialValue_create_uint("id", component.id);
+            SerialObject_AddSerialValue(&componentObject, &idValue);
+
+            SerialObject_AddChild(&componentPoolObject, &componentObject);
+
+        }
+
+        // mask id
+        SerialObject gameObjectSerialObject = SerialObject_create(gameObject.name);
+        SerialValue maskValue = SerialValue_create_uint("mask", gameObject.component_mask);
+        SerialObject_AddSerialValue(&gameObjectSerialObject, &maskValue);
+        SerialValue idValue = SerialValue_create_uint("id", gameObject.id);
+        SerialObject_AddSerialValue(&gameObjectSerialObject, &idValue);
+        SerialObject_AddChild(&gameobjectsObject, &gameObjectSerialObject);
+
     }
 
     SerialObject_AddChild(&sceneObject, &gameobjectsObject);

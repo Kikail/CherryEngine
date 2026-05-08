@@ -20,6 +20,7 @@ typedef enum ComponentType_t{
 typedef struct{
     uint32 component_adress;
     ComponentType component_type;
+    unsigned int id;
 } Component;
 
 #endif //CHERRYENGINE_COMPONENT_H

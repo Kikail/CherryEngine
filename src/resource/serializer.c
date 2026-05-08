@@ -55,7 +55,7 @@ SerialValue SerialValue_create_uint(const char* name, unsigned int value) {
     SerialValue sv;
     sv.name = strdup(name);
     char buffer[32];
-    snprintf(buffer, sizeof(buffer), "%d", value);
+    snprintf(buffer, sizeof(buffer), "%u", value);
     sv.value = strdup(buffer);
     return sv;
 }

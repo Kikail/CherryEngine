@@ -118,25 +118,23 @@ void ComponentPool_UpdateComponent(ComponentPool* componentPool, ComponentType c
     }
 }
 
-SerialObject ComponentPool_serialize(ComponentPool* componentPool) {
-    SerialObject componentPoolObject = SerialObject_create("ComponentPool");
-
-    for (int i = 0; i < componentPool->currentTransformCount; i++) {
-        SerialObject transformObject =  Transform_serialize(&componentPool->transforms[i]);
-        SerialObject_AddChild(&componentPoolObject, &transformObject);
+SerialObject ComponentPool_serializeComponent(ComponentPool* componentPool, ComponentType componentType, uint32 index) {
+    switch (componentType)
+    {
+        case COMPONENT_TRANSFORM:
+            return Transform_serialize(&componentPool->transforms[index]);
+            break;
+        case COMPONENT_PLAYER_CONTROLLER:
+            return PlayerController_serialize(&componentPool->playerControllers[index]);
+            break;
+        case COMPONENT_SPRITE_RENDERER:
+            return SpriteRenderer_serialize(&componentPool->spriteRenderers[index]);
+            break;
+        case COMPONENT_MESH_RENDERER:
+            return MeshRenderer_serialize(&componentPool->meshRenderers[index]);
+            break;
+        default:
+            return SerialObject_create("Invalid component type");
+            break;
     }
-    for (int i = 0; i < componentPool->currentMeshRendererCount; i++) {
-        SerialObject meshRendererObject =  MeshRenderer_serialize(&componentPool->meshRenderers[i]);
-        SerialObject_AddChild(&componentPoolObject, &meshRendererObject);
-    }
-    for (int i = 0; i < componentPool->currentSpriteRendererCount; i++) {
-        SerialObject spriteRendererObject =  SpriteRenderer_serialize(&componentPool->spriteRenderers[i]);
-        SerialObject_AddChild(&componentPoolObject, &spriteRendererObject);
-    }
-    for (int i = 0; i < componentPool->currentPlayerControllerCount; i++) {
-        SerialObject playerControllerObject =  PlayerController_serialize(&componentPool->playerControllers[i]);
-        SerialObject_AddChild(&componentPoolObject, &playerControllerObject);
-    }
-
-    return componentPoolObject;
 }
