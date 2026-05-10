@@ -11,6 +11,7 @@
 
 #include "../../utils/types.h"
 
+#include "component.h"
 #include "components/transform.h"
 #include "components/meshRenderer.h"
 #include "components/spriteRenderer.h"
@@ -32,7 +33,7 @@ typedef struct ComponentPool_t {
 
 ComponentPool ComponentPool_Create();
 bool ComponentPool_CheckSpace(ComponentPool* componentPool, ComponentType componentType);
-bool ComponentPool_CreateComponent(ComponentPool* componentPool, ComponentType componentType, uint32* index);
+bool ComponentPool_CreateComponent(ComponentPool* componentPool, ComponentType componentType, Component* component);
 void* ComponentPool_GetComponent(ComponentPool* componentPool, ComponentType componentType, uint32 index);
 void ComponentPool_UpdateComponent(ComponentPool* componentPool, ComponentType componentType, void* component, GameObject* gameObject, float deltaTime);
 

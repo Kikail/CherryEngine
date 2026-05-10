@@ -10,6 +10,7 @@
 #include "resource/serializer.h"
 
 #define TRANSFORM_MAX_CHILDREN 16
+#define TRANSFORM_PARENT_NULL 4294967295
 
 typedef struct GameObject_t GameObject;
 
@@ -30,6 +31,9 @@ typedef struct Transform_t {
     vec3s scale;
     mat4s worldMatrix;
     bool isDirty;
+
+    unsigned int id;
+    unsigned int parentId;
 
     struct Transform_t* parent;
     struct Transform_t* childs[TRANSFORM_MAX_CHILDREN];

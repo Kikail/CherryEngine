@@ -58,12 +58,16 @@ int main(int argc, char** argv)
     DEBUG_AddGameObjectComponent(gameObject, &component_pool, COMPONENT_SPRITE_RENDERER)
     MeshRenderer* mesh_renderer = GameObject_GetComponent(gameObject, &component_pool, COMPONENT_MESH_RENDERER);
     MeshRenderer* spriteRenderer = GameObject_GetComponent(gameObject, &component_pool, COMPONENT_SPRITE_RENDERER);
-    Transform* tranformComp = GameObject_GetComponent(gameObject, &component_pool, COMPONENT_TRANSFORM);
-    Transform_translate(tranformComp, (vec3s){3.0,10.0,0.0}, false);
+    Transform* tranformComp1 = GameObject_GetComponent(gameObject, &component_pool, COMPONENT_TRANSFORM);
+    Transform_translate(tranformComp1, (vec3s){3.0,10.0,0.0}, false);
     DEBUG_isValid(mesh_renderer);
     DEBUG_isValid(spriteRenderer);
     GameObject* gameObject2 = Scene_addGameObject(scene, "GameObject02");
     DEBUG_AddGameObjectComponent(gameObject2, &component_pool, COMPONENT_MESH_RENDERER)
+    DEBUG_AddGameObjectComponent(gameObject2, &component_pool, COMPONENT_TRANSFORM)
+    Transform* tranformComp2 = GameObject_GetComponent(gameObject2, &component_pool, COMPONENT_TRANSFORM);
+    Transform_setParent(tranformComp2, tranformComp1, KEEP_WORLD);
+
     GameObject* gameObject3 = Scene_addGameObject(scene, "GameObject03");
     DEBUG_AddGameObjectComponent(gameObject3, &component_pool, COMPONENT_MESH_RENDERER)
 

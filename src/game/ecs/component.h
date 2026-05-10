@@ -21,6 +21,7 @@ typedef struct{
     uint32 component_adress;
     ComponentType component_type;
     unsigned int id;
+    unsigned int parentId;
 } Component;
 
 #endif //CHERRYENGINE_COMPONENT_H

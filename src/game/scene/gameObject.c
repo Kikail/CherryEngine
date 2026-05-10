@@ -23,20 +23,20 @@ bool GameObject_AddComponent(GameObject* gameObject, ComponentPool* componentPoo
     // On ajoute le bit correspondant a ce type de component
     gameObject->component_mask |= componentType;
 
-    // On lie le component du componentPool avec le component du GameObject
-    gameObject->components[gameObject->componentCount].component_type = componentType;
-    if(!ComponentPool_CreateComponent(componentPool, componentType, &gameObject->components[gameObject->componentCount].component_adress)){
-        DEBUG_LOG("Erreur de creation de component dans le ComponentPool !\n");
-        return false;
-    }
-
     if (Id_createId(&gameObject->components[gameObject->componentCount].id)) {
-
+        gameObject->components[gameObject->componentCount].parentId = gameObject->id;
     }
     else {
         #ifdef DEBUG
                 DEBUG_LOG("GAMEOEBJECT::GameObject_AddComponent max id reached");
         #endif
+    }
+
+    // On lie le component du componentPool avec le component du GameObject
+    gameObject->components[gameObject->componentCount].component_type = componentType;
+    if(!ComponentPool_CreateComponent(componentPool, componentType, &gameObject->components[gameObject->componentCount])){
+        DEBUG_LOG("Erreur de creation de component dans le ComponentPool !\n");
+        return false;
     }
 
     // On oublie pas d'augmenter le nombre de components

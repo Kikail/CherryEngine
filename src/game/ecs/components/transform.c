@@ -58,6 +58,12 @@ void Transform_setParent(Transform* transform, Transform* parent, TransformKeep 
     }
 
     transform->parent = parent;
+    if (transform->parent) {
+        transform->parentId = parent->id;
+    }
+    else {
+        transform->parentId = TRANSFORM_PARENT_NULL;
+    }
 
     // Ajouter au nouveau parent
     if (parent && parent->childCount < TRANSFORM_MAX_CHILDREN) {
@@ -289,6 +295,7 @@ SerialObject Transform_serialize(Transform* transform) {
     SerialValue scalex = SerialValue_create_double("scalex", transform->scale.x);
     SerialValue scaley = SerialValue_create_double("scaley", transform->scale.y);
     SerialValue scalez = SerialValue_create_double("scalez", transform->scale.z);
+    SerialValue parentId = SerialValue_create_uint("parentTransformId", transform->parentId);
 
     SerialObject_AddSerialValue(&transformObject, &posx);
     SerialObject_AddSerialValue(&transformObject, &posy);
@@ -300,6 +307,7 @@ SerialObject Transform_serialize(Transform* transform) {
     SerialObject_AddSerialValue(&transformObject, &scalex);
     SerialObject_AddSerialValue(&transformObject, &scaley);
     SerialObject_AddSerialValue(&transformObject, &scalez);
+    SerialObject_AddSerialValue(&transformObject, &parentId);
 
     // IL MANQUE LES INFOS SUR LE PARENT
 

@@ -33,7 +33,7 @@ bool ComponentPool_CheckSpace(ComponentPool* componentPool, ComponentType compon
     #endif
     return false;
 }
-bool ComponentPool_CreateComponent(ComponentPool* componentPool, ComponentType componentType, uint32* index){
+bool ComponentPool_CreateComponent(ComponentPool* componentPool, ComponentType componentType, Component* component){
     // On check si il y a encore de la place sinon on skip
     if(!ComponentPool_CheckSpace(componentPool, componentType)){
         #ifdef DEBUG
@@ -44,19 +44,21 @@ bool ComponentPool_CreateComponent(ComponentPool* componentPool, ComponentType c
     switch (componentType)
     {
         case COMPONENT_TRANSFORM:
-            *index = componentPool->currentTransformCount;
+            component->component_adress = componentPool->currentTransformCount;
+            componentPool->transforms[componentPool->currentTransformCount].id = component->id;
+            componentPool->transforms[componentPool->currentTransformCount].parentId = TRANSFORM_PARENT_NULL;
             componentPool->currentTransformCount += 1;
             break;
         case COMPONENT_PLAYER_CONTROLLER:
-            *index = componentPool->currentPlayerControllerCount;
+            component->component_adress = componentPool->currentPlayerControllerCount;
             componentPool->currentPlayerControllerCount += 1;
             break;
         case COMPONENT_SPRITE_RENDERER:
-            *index = componentPool->currentSpriteRendererCount;
+            component->component_adress = componentPool->currentSpriteRendererCount;
             componentPool->currentSpriteRendererCount += 1;
             break;
         case COMPONENT_MESH_RENDERER:
-            *index = componentPool->currentMeshRendererCount;
+            component->component_adress = componentPool->currentMeshRendererCount;
             componentPool->currentMeshRendererCount += 1;
             break;
     }

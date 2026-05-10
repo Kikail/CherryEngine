@@ -68,7 +68,8 @@ SerialObject Scene_serialize(Scene* scene, ComponentPool* componentPool) {
             SerialObject componentObject = ComponentPool_serializeComponent(componentPool, component.component_type, component.component_adress);
             SerialValue idValue = SerialValue_create_uint("id", component.id);
             SerialObject_AddSerialValue(&componentObject, &idValue);
-
+            SerialValue parent = SerialValue_create_uint("parent", component.parentId);
+            SerialObject_AddSerialValue(&componentObject, &parent);
             SerialObject_AddChild(&componentPoolObject, &componentObject);
 
         }
