@@ -7,6 +7,8 @@
 #include "utils/idMaker.h"
 #include "utils/utils.h"
 
+#define FOR_INF(valeur) for(int i = 0; i < valeur; i++)
+
 Scene* Scene_create(char* name) {
     Scene* scene = malloc(sizeof(Scene));
     #ifdef DEBUG
@@ -89,3 +91,72 @@ SerialObject Scene_serialize(Scene* scene, ComponentPool* componentPool) {
 
     return sceneObject;
 }
+
+Scene* Scene_deserialize(SerialObject* sceneObject) {
+    if (sceneObject == NULL) {
+        #ifdef DEBUG
+                DEBUG_LOG("SCENE::Scene_deserialize sceneObject null");
+        #endif
+        return NULL;
+    }
+
+    // Ici on recupere le nom initial de la scenes
+    SerialValue sceneNameValue = SerialObject_GetByName(sceneObject, "name");
+    char* sceneName = SerialValue_GetStringValue(&sceneNameValue);
+    Scene* scene = Scene_create(sceneName);
+
+    // Ici on recupere les deux grands conteneurs d'objets qui contiennent tout les objets dans la scene ainsi que tout les composants
+    // Notre but va etre de recreer tout les objets, de leur assigner leur mask, id et nom
+    SerialObject* gameObjectSerialObject = SerialObject_GetObjectByName(sceneObject, "GameObjects");
+    FOR_INF(gameObjectSerialObject->num_childrens) {
+        // On charge chaque GameObject 1 par 1 et on charge ses donnees dans une structure
+        struct SerialObject_t gameObjectSerialized = gameObjectSerialObject->childrens[i];
+
+        // Nous recuperons le nom de l'objet dans la scene
+        SerialValue gameObjectNameValue = SerialObject_GetByName(&gameObjectSerialized, "name");
+        char* gameObjectName = SerialValue_GetStringValue(&gameObjectNameValue);
+
+        // Ici on creer un gameObject a partir du nom charger
+        GameObject* gameObject = Scene_addGameObject(scene, gameObjectName);
+
+        // Nous recuperons ensuite chaque donnee du gameObject et le mettons dans la structure creer
+        SerialValue gameObjectMaskValue = SerialObject_GetByName(&gameObjectSerialized, "mask");
+        unsigned int gameObjectMask = SerialValue_GetUintValue(&gameObjectMaskValue);
+        SerialValue gameObjectIdValue = SerialObject_GetByName(&gameObjectSerialized, "id");
+        unsigned int gameObjectId = SerialValue_GetUintValue(&gameObjectMaskValue);
+        gameObject->component_mask = gameObjectMask;
+        gameObject->id = gameObjectId;
+
+        #ifdef DEBUG
+                printf("(%s, %u, %u) loaded\n", gameObject->name, gameObject->id, gameObject->component_mask);
+        #endif
+    }
+
+    // Nous allons ensuiter recreer tout les composants et les assigner aux bons objets par la suite
+    // Nous recreerons ainsi la hierarchie sauvegardee dans le fichier de scene
+    SerialObject* componentPoolSerialObject = SerialObject_GetObjectByName(sceneObject, "ComponentPool");
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
