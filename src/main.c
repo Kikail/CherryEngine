@@ -40,55 +40,6 @@ vec3s lightPos = {1.5, 1.5, 1.5};
 // ==========================================
 int main(int argc, char** argv)
 {
-    ////////////////////////////////////////////////////
-    ///     Testing des scenes
-    ////////////////////////////////////////////////////
-    ComponentPool component_pool = ComponentPool_Create();
-    DEBUG_LOG("Creating the compone"
-              "5nt pool");
-
-    Scene* scene = Scene_create("testScene");
-    DEBUG_showName(scene);
-    GameObject* gameObject = Scene_addGameObject(scene, "GameObject01");
-    DEBUG_showName(gameObject);
-    DEBUG_AddGameObjectComponent(gameObject, &component_pool, COMPONENT_MESH_RENDERER)
-    DEBUG_AddGameObjectComponent(gameObject, &component_pool, COMPONENT_TRANSFORM)
-    DEBUG_AddGameObjectComponent(gameObject, &component_pool, COMPONENT_SPRITE_RENDERER)
-    MeshRenderer* mesh_renderer = GameObject_GetComponent(gameObject, &component_pool, COMPONENT_MESH_RENDERER);
-    MeshRenderer* spriteRenderer = GameObject_GetComponent(gameObject, &component_pool, COMPONENT_SPRITE_RENDERER);
-    Transform* tranformComp1 = GameObject_GetComponent(gameObject, &component_pool, COMPONENT_TRANSFORM);
-    Transform_translate(tranformComp1, (vec3s){3.0,10.0,0.0}, false);
-    DEBUG_isValid(mesh_renderer);
-    DEBUG_isValid(spriteRenderer);
-    GameObject* gameObject2 = Scene_addGameObject(scene, "GameObject02");
-    DEBUG_AddGameObjectComponent(gameObject2, &component_pool, COMPONENT_MESH_RENDERER)
-    DEBUG_AddGameObjectComponent(gameObject2, &component_pool, COMPONENT_TRANSFORM)
-    Transform* tranformComp2 = GameObject_GetComponent(gameObject2, &component_pool, COMPONENT_TRANSFORM);
-    Transform_setParent(tranformComp2, tranformComp1, KEEP_WORLD);
-
-    GameObject* gameObject3 = Scene_addGameObject(scene, "GameObject03");
-    DEBUG_AddGameObjectComponent(gameObject3, &component_pool, COMPONENT_MESH_RENDERER)
-
-    srand((unsigned int)time(NULL));
-
-
-    float deltaTime = 0.0f;
-    float lastFrame = 0.0f;
-    float currentFrame = 0.0f;
-
-
-
-    FILE* f = fopen("/home/killian/Projects/C/CherryEngine/resources/scenes/test.csn", "r");
-    SerialObject serialObject = SerialObject_DeserializeSingle(f);
-    fclose(f);
-    SerialObject_Print(&serialObject);
-    Scene* testScene = Scene_deserialize(&serialObject);
-
-    SerialObject sceneObj = Scene_serialize(scene, &component_pool);
-    SerialObject_Print(&sceneObj);
-    FileSaver* fileSaver = FileSaver_create("/home/killian/Projects/C/CherryEngine/resources/scenes/test.csn", SerialObject_Serialize(&sceneObj));
-    FileSaver_save(fileSaver);
-
     Game* game = Game_init();
 
     glEnable(GL_DEPTH_TEST);
@@ -122,6 +73,47 @@ int main(int argc, char** argv)
         0.75,
         shader
     );
+
+    ////////////////////////////////////////////////////
+    ///     Testing des scenes
+    ////////////////////////////////////////////////////
+    ComponentPool component_pool = ComponentPool_Create();
+    DEBUG_LOG("Creating the compone"
+              "5nt pool");
+
+    //Scene* scene = Scene_create("testScene");
+
+    srand((unsigned int)time(NULL));
+
+    float deltaTime = 0.0f;
+    float lastFrame = 0.0f;
+    float currentFrame = 0.0f;
+
+    /*
+    for (int i = 0; i < 10; i++) {
+        GameObject* gameObject = Scene_addGameObject(scene, "GameObject");
+        DEBUG_AddGameObjectComponent(gameObject, &component_pool, COMPONENT_TRANSFORM)
+        Transform* transform = GameObject_GetComponent(gameObject, &component_pool, COMPONENT_TRANSFORM);
+        Transform_setScale(transform, (vec3s){0.2, 0.2, 0.2});
+        transform->position.x = sin(rand());
+        transform->position.y = cos(rand());
+    }
+    */
+
+    FILE* f = fopen("/home/killian/Projects/C/CherryEngine/resources/scenes/test.csn", "r");
+    SerialObject serialObject = SerialObject_DeserializeSingle(f);
+    fclose(f);
+    SerialObject_Print(&serialObject);
+    Scene* scene = Scene_deserialize(&serialObject, &component_pool);
+
+    /*
+    SerialObject sceneObj = Scene_serialize(testScene, &component_pool);
+    SerialObject_Print(&sceneObj);
+    FileSaver* fileSaver = FileSaver_create("/home/killian/Projects/C/CherryEngine/resources/scenes/test.csn", SerialObject_Serialize(&sceneObj));
+    FileSaver_save(fileSaver);
+    */
+
+
 
     
 
@@ -186,35 +178,26 @@ int main(int argc, char** argv)
         Model_Draw(&resourceManager->models[0], shaderSkybox);
         glDepthMask(GL_TRUE);
 
-        // Rendu
-        Shader_use(shader);
-        glActiveTexture(GL_TEXTURE5);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
-        Shader_setInt(shader, "skybox", 5);
-        Shader_setMat4(shader, "projection", Game_getPerspective(game));
-        Shader_setMat4(shader, "view", view);
-        Shader_setMat4(shader, "model", Transform_getWorldMatrix(&modelTransform));
-        Shader_setVec3(shader, "lightPos", lightPos);
-        Shader_setVec3(shader, "viewPos", camPos);
-        Material_sendToShader(&material, shader);
-        Model_Draw(&resourceManager->models[1], shader);
+        for (int i = 0; i < scene->numGameObjects; i++) {
+            // Rendu
+            Transform* transform = GameObject_GetComponent(&scene->gameObjects[i], &component_pool, COMPONENT_TRANSFORM);
+            transform->position.z = sin(currentFrame * i);
+            transform->isDirty = true;
+            mat4s modelView = Transform_getWorldMatrix(transform);
 
+            Shader_use(shader);
+            glActiveTexture(GL_TEXTURE5);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+            Shader_setInt(shader, "skybox", 5);
+            Shader_setMat4(shader, "projection", Game_getPerspective(game));
+            Shader_setMat4(shader, "view", view);
+            Shader_setMat4(shader, "model", modelView);
+            Shader_setVec3(shader, "lightPos", lightPos);
+            Shader_setVec3(shader, "viewPos", camPos);
+            Material_sendToShader(&material, shader);
 
-        // Rendu
-        mat4s modelView = glms_translate(glms_mat4_identity(), lightPos);
-        modelView = glms_scale(modelView, (vec3s){0.1,0.1,0.1});
-        Shader_use(shader);
-        glActiveTexture(GL_TEXTURE5);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
-        Shader_setInt(shader, "skybox", 5);
-        Shader_setMat4(shader, "projection", Game_getPerspective(game));
-        Shader_setMat4(shader, "view", view);
-        Shader_setMat4(shader, "model", modelView);
-        Shader_setVec3(shader, "lightPos", lightPos);
-        Shader_setVec3(shader, "viewPos", camPos);
-        Material_sendToShader(&material, shader);
-
-        Model_Draw(&resourceManager->models[0], shader);
+            Model_Draw(&resourceManager->models[0], shader);
+        }
 
         //Scene_updateScene(scene, &component_pool, deltaTime);
 

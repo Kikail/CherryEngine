@@ -1,9 +1,10 @@
 //
 // Created by killian on 3/11/26.
 //
-#include "../scene/gameObject.h"
+#include "gameObject.h"
 #include "../ecs/componentPool.h"
 #include "utils/idMaker.h"
+#include "game.h"
 
 GameObject GameObject_Create(char* name){
     GameObject gameObject;
@@ -44,6 +45,25 @@ bool GameObject_AddComponent(GameObject* gameObject, ComponentPool* componentPoo
 
     return true;
 }
+bool GameObject_AddComponentWithoutAddingComponentPool(GameObject* gameObject, ComponentPool* componentPool, ComponentType componentType) {
+    // comparaison bit a bit pour savoir si le gameObject possede deja un component de ce type
+    if((gameObject->component_mask & componentType) == componentType){
+#ifdef DEBUG
+        DEBUG_LOG("GameObject_AddComponent::GameObject already have a component of this type");
+#endif
+        return false;
+    }
+    // On ajoute le bit correspondant a ce type de component
+    gameObject->component_mask |= componentType;
+
+    // On lie le component du componentPool avec le component du GameObject
+    gameObject->components[gameObject->componentCount].component_type = componentType;
+
+    // On oublie pas d'augmenter le nombre de components
+    gameObject->componentCount += 1;
+
+    return true;
+}
 bool GameObject_HasComponent(GameObject* gameObject, ComponentType componentType){
     #ifdef DEBUG
         if (gameObject == NULL)
@@ -67,12 +87,12 @@ void* GameObject_GetComponent(GameObject* gameObject, ComponentPool* componentPo
     #endif
         return NULL;
 }
-void GameObject_updateComponents(GameObject* gameObject, ComponentPool* componentPool, float deltaTime) {
+void GameObject_updateComponents(GameObject* gameObject, ComponentPool* componentPool, float deltaTime, Game* game) {
     #ifdef DEBUG
         if (gameObject == NULL || componentPool == NULL)
             DEBUG_LOG("GAMEOBJECT::GameObject_updateComponents gameObject or componentPool is NULL");
     #endif
     for(int i = 0; i < gameObject->componentCount; i++){
-        ComponentPool_UpdateComponent(componentPool, gameObject->components[i].component_type, GameObject_GetComponent(gameObject, componentPool, gameObject->components[i].component_type), gameObject, deltaTime);
+        ComponentPool_UpdateComponent(componentPool, gameObject->components[i].component_type, GameObject_GetComponent(gameObject, componentPool, gameObject->components[i].component_type), gameObject, deltaTime, game);
     }
 }

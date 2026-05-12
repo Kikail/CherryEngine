@@ -10,6 +10,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "game/ecs/componentPool.h"
+
 // ==========================================================
 // FONCTIONS INTERNES (Privées)
 // ==========================================================
@@ -312,4 +314,39 @@ SerialObject Transform_serialize(Transform* transform) {
     // IL MANQUE LES INFOS SUR LE PARENT
 
     return transformObject;
+}
+
+void Transform_deserialize(Transform* transform, SerialObject* serialObject, ComponentPool* componentPool) {
+    SerialValue posx = SerialObject_GetByName(serialObject,"posx");
+    SerialValue posy = SerialObject_GetByName(serialObject,"posy");
+    SerialValue posz = SerialObject_GetByName(serialObject,"posz");
+    SerialValue rotx = SerialObject_GetByName(serialObject,"rotx");
+    SerialValue roty = SerialObject_GetByName(serialObject,"roty");
+    SerialValue rotz = SerialObject_GetByName(serialObject,"rotz");
+    SerialValue rotw = SerialObject_GetByName(serialObject,"rotw");
+    SerialValue scalex = SerialObject_GetByName(serialObject,"scalex");
+    SerialValue scaley = SerialObject_GetByName(serialObject,"scaley");
+    SerialValue scalez = SerialObject_GetByName(serialObject,"scalez");
+    SerialValue parentId = SerialObject_GetByName(serialObject,"parentTransformId");
+
+    transform->position.x = SerialValue_GetDoubleValue(&posx);
+    transform->position.y = SerialValue_GetDoubleValue(&posy);
+    transform->position.z = SerialValue_GetDoubleValue(&posz);
+    transform->rotation.x = SerialValue_GetDoubleValue(&rotx);
+    transform->rotation.y = SerialValue_GetDoubleValue(&roty);
+    transform->rotation.z = SerialValue_GetDoubleValue(&rotz);
+    transform->rotation.w = SerialValue_GetDoubleValue(&rotw);
+    transform->scale.x = SerialValue_GetDoubleValue(&scalex);
+    transform->scale.y = SerialValue_GetDoubleValue(&scaley);
+    transform->scale.z = SerialValue_GetDoubleValue(&scalez);
+    transform->parentId = SerialValue_GetUintValue(&parentId);
+    transform->isDirty = true;
+
+    if (transform->parentId != TRANSFORM_PARENT_NULL) {
+        for (int i = 0; i < componentPool->currentTransformCount; i++) {
+            if (componentPool->transforms[i].id == transform->parentId) {
+                Transform_setParent(transform, &componentPool->transforms[i], KEEP_NOTHING);
+            }
+        }
+    }
 }

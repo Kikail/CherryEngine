@@ -13,7 +13,9 @@ void Component_SpriteRenderer_Update(SpriteRenderer* transform, GameObject* game
 
 SerialObject SpriteRenderer_serialize(SpriteRenderer* spriteRenderer) {
     SerialObject obj = SerialObject_create("SpriteRenderer");
-
-
     return obj;
+}
+
+void SpriteRenderer_deserialize(SpriteRenderer* spriteRenderer, SerialObject* serialObject) {
+
 }

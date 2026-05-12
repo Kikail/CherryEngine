@@ -39,6 +39,9 @@ FileType getFileType(const char* extension) {
     else if (strcmp(extension, "vs") == 0) {
         fileType = FILETYPE_VS;
     }
+    else if (strcmp(extension, "meta") == 0) {
+        fileType = FILETYPE_METADATA;
+    }
 
     return fileType;
 }

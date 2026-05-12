@@ -14,5 +14,6 @@ typedef struct {
 
 void Component_MeshRenderer_Update(MeshRenderer* meshRenderer, GameObject* gameObject);
 SerialObject MeshRenderer_serialize(MeshRenderer* meshRenderer);
+void MeshRenderer_deserialize(MeshRenderer* meshRenderer, SerialObject* serialObject);
 
 #endif //CHERRYENGINE_MESHRENDERER_H

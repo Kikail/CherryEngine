@@ -20,10 +20,11 @@
 
 typedef struct GameObject_t GameObject;
 typedef enum ComponentType_t ComponentType;
+typedef struct Game_t Game;
 
 // Creation du stock de components
 // Ici nous stockons tout les composants de la scene
-#define MAX_COMPONENTS 1000
+#define MAX_COMPONENTS 100
 typedef struct ComponentPool_t {
     Transform transforms[MAX_COMPONENTS]; uint32 currentTransformCount;
     MeshRenderer meshRenderers[MAX_COMPONENTS]; uint32 currentMeshRendererCount;
@@ -35,8 +36,9 @@ ComponentPool ComponentPool_Create();
 bool ComponentPool_CheckSpace(ComponentPool* componentPool, ComponentType componentType);
 bool ComponentPool_CreateComponent(ComponentPool* componentPool, ComponentType componentType, Component* component);
 void* ComponentPool_GetComponent(ComponentPool* componentPool, ComponentType componentType, uint32 index);
-void ComponentPool_UpdateComponent(ComponentPool* componentPool, ComponentType componentType, void* component, GameObject* gameObject, float deltaTime);
+void ComponentPool_UpdateComponent(ComponentPool* componentPool, ComponentType componentType, void* component, GameObject* gameObject, float deltaTime, Game* game);
 
 SerialObject ComponentPool_serializeComponent(ComponentPool* componentPool, ComponentType componentType, uint32 index);
+void ComponentPool_deserialize(ComponentPool* componentPool, ComponentType componentType, SerialObject* serialObject);
 
 #endif //CHERRYENGINE_COMPONENTPOOL_H

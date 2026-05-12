@@ -18,7 +18,8 @@ typedef enum FileType_e {
     FILETYPE_MTL,
     FILETYPE_OBJ,
     FILETYPE_FS,
-    FILETYPE_VS
+    FILETYPE_VS,
+    FILETYPE_METADATA
 } FileType;
 
 typedef struct CherryFile_t {

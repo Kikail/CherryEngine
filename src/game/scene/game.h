@@ -10,10 +10,7 @@
 #include "render/camera.h"
 #include "../../resource/resourceManager.h"
 #include "game/input/input.h"
-#include "GLFW/glfw3.h"
-
 #include "render/camera.h"
-
 /**
  * \brief Une structure de donnee regroupant toutes les infos utiles pour les components
  */

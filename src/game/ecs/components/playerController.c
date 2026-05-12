@@ -64,3 +64,7 @@ SerialObject PlayerController_serialize(PlayerController* playerController) {
 
     return obj;
 }
+
+void PlayerController_deserialize(PlayerController* playerController, SerialObject* serialObject) {
+
+}

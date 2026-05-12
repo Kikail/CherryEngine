@@ -13,6 +13,7 @@
 #include "../ecs/component.h"
 
 typedef struct ComponentPool_t ComponentPool;
+typedef struct Game_t Game;
 
 // Creation du type GameObject
 #define MAX_COMPONENT_PER_OBJECT 16
@@ -28,8 +29,9 @@ typedef struct GameObject_t {
 
 GameObject GameObject_Create(char* name);
 bool GameObject_AddComponent(GameObject* gameObject, ComponentPool* componentPool, ComponentType componentType);
+bool GameObject_AddComponentWithoutAddingComponentPool(GameObject* gameObject, ComponentPool* componentPool, ComponentType componentType);
 bool GameObject_HasComponent(GameObject* gameObject, ComponentType componentType);
 void* GameObject_GetComponent(GameObject* gameObject, ComponentPool* componentPool, ComponentType componentType);
-void GameObject_updateComponents(GameObject* gameObject, ComponentPool* componentPool, float deltaTime);
+void GameObject_updateComponents(GameObject* gameObject, ComponentPool* componentPool, float deltaTime, Game* game);
 
 #endif //CHERRYENGINE_GAMEOBJECT_H

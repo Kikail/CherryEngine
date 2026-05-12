@@ -2,10 +2,9 @@
 // Created by killian on 4/9/26.
 //
 #include "scene.h"
-
-#include "game/ecs/componentPool.h"
 #include "utils/idMaker.h"
 #include "utils/utils.h"
+#include "game/ecs/componentPool.h"
 
 #define FOR_INF(valeur) for(int i = 0; i < valeur; i++)
 
@@ -39,10 +38,18 @@ GameObject* Scene_addGameObject(Scene* scene, char* objectName) {
     scene->numGameObjects++;
     return &scene->gameObjects[scene->numGameObjects - 1];
 }
-void Scene_updateScene(Scene* scene, ComponentPool* componentPoool, float deltaTime) {
+void Scene_updateScene(Scene* scene, ComponentPool* componentPoool, float deltaTime, Game* game) {
     for (uint32 i = 0; i < scene->numGameObjects; i++) {
-        GameObject_updateComponents(&scene->gameObjects[i], componentPoool, deltaTime);
+        GameObject_updateComponents(&scene->gameObjects[i], componentPoool, deltaTime,game);
     }
+}
+GameObject* Scene_getGameObject(Scene* scene, unsigned int id) {
+    FOR_INF(scene->numGameObjects) {
+        if (scene->gameObjects[i].id == id) {
+            return &scene->gameObjects[i];
+        }
+    }
+    return NULL;
 }
 SerialObject Scene_serialize(Scene* scene, ComponentPool* componentPool) {
     #ifdef DEBUG
@@ -68,10 +75,13 @@ SerialObject Scene_serialize(Scene* scene, ComponentPool* componentPool) {
              // Ici il faudrait avoir un serial object du component mais de maniere abstraire comme le component pool
             // Puis ensuite ajouter l'id qui est dans component
             SerialObject componentObject = ComponentPool_serializeComponent(componentPool, component.component_type, component.component_adress);
+
             SerialValue idValue = SerialValue_create_uint("id", component.id);
             SerialObject_AddSerialValue(&componentObject, &idValue);
             SerialValue parent = SerialValue_create_uint("parent", component.parentId);
             SerialObject_AddSerialValue(&componentObject, &parent);
+            SerialValue maskValue = SerialValue_create_uint("type", component.component_type);
+            SerialObject_AddSerialValue(&componentObject, &maskValue);
             SerialObject_AddChild(&componentPoolObject, &componentObject);
 
         }
@@ -92,7 +102,7 @@ SerialObject Scene_serialize(Scene* scene, ComponentPool* componentPool) {
     return sceneObject;
 }
 
-Scene* Scene_deserialize(SerialObject* sceneObject) {
+Scene* Scene_deserialize(SerialObject* sceneObject, ComponentPool* componentPool) {
     if (sceneObject == NULL) {
         #ifdef DEBUG
                 DEBUG_LOG("SCENE::Scene_deserialize sceneObject null");
@@ -123,7 +133,7 @@ Scene* Scene_deserialize(SerialObject* sceneObject) {
         SerialValue gameObjectMaskValue = SerialObject_GetByName(&gameObjectSerialized, "mask");
         unsigned int gameObjectMask = SerialValue_GetUintValue(&gameObjectMaskValue);
         SerialValue gameObjectIdValue = SerialObject_GetByName(&gameObjectSerialized, "id");
-        unsigned int gameObjectId = SerialValue_GetUintValue(&gameObjectMaskValue);
+        unsigned int gameObjectId = SerialValue_GetUintValue(&gameObjectIdValue);
         gameObject->component_mask = gameObjectMask;
         gameObject->id = gameObjectId;
 
@@ -135,6 +145,37 @@ Scene* Scene_deserialize(SerialObject* sceneObject) {
     // Nous allons ensuiter recreer tout les composants et les assigner aux bons objets par la suite
     // Nous recreerons ainsi la hierarchie sauvegardee dans le fichier de scene
     SerialObject* componentPoolSerialObject = SerialObject_GetObjectByName(sceneObject, "ComponentPool");
+    FOR_INF(componentPoolSerialObject->num_childrens) {
+        // On charge chaque GameObject 1 par 1 et on charge ses donnees dans une structure
+        struct SerialObject_t componentSerialized = componentPoolSerialObject->childrens[i];
+
+        // On recupere le type du component
+        SerialValue typeValue = SerialObject_GetByName(&componentSerialized, "type");
+        ComponentType componentType = SerialValue_GetUintValue(&typeValue);
+
+        // On recupere l'id du parent
+        SerialValue parentIdValue = SerialObject_GetByName(&componentSerialized, "parent");
+        // On recupere l'id du component
+        SerialValue idValue = SerialObject_GetByName(&componentSerialized, "id");
+
+        // On recreer un component
+        Component component;
+        component.component_type = componentType;
+        component.parentId = SerialValue_GetUintValue(&parentIdValue);
+        component.id = SerialValue_GetUintValue(&idValue);
+
+        // On ajoute le component dans le gameObject et dans le componentPool
+        GameObject* gameObject = Scene_getGameObject(scene, component.parentId);
+        gameObject->components[gameObject->componentCount].component_type = component.component_type;
+        gameObject->components[gameObject->componentCount].parentId = component.parentId;
+        gameObject->components[gameObject->componentCount].id = component.id;
+        ComponentPool_CreateComponent(componentPool, component.component_type, &gameObject->components[gameObject->componentCount]);
+        ComponentPool_deserialize(componentPool, component.component_type, &componentSerialized);
+        // On oublie pas d'augmenter le nombre de components
+        gameObject->componentCount += 1;
+    }
+
+    return scene;
 }
 
 

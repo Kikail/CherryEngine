@@ -2,7 +2,11 @@
 // Created by killian on 3/11/26.
 //
 #include "componentPool.h"
+
+#include <strings.h>
+
 #include "component.h"
+#include "../scene/game.h"
 
 ComponentPool ComponentPool_Create(){
     ComponentPool c;
@@ -95,7 +99,7 @@ void* ComponentPool_GetComponent(ComponentPool* componentPool, ComponentType com
     return NULL;
 }
 
-void ComponentPool_UpdateComponent(ComponentPool* componentPool, ComponentType componentType, void* component, GameObject* gameObject, float deltaTime){
+void ComponentPool_UpdateComponent(ComponentPool* componentPool, ComponentType componentType, void* component, GameObject* gameObject, float deltaTime, Game* game){
     if(component == NULL){
         #ifdef DEBUG
                 DEBUG_LOG("ComponentPool_UpdateComponent::Component is NULL");
@@ -137,6 +141,26 @@ SerialObject ComponentPool_serializeComponent(ComponentPool* componentPool, Comp
             break;
         default:
             return SerialObject_create("Invalid component type");
+            break;
+    }
+}
+
+void ComponentPool_deserialize(ComponentPool* componentPool, ComponentType componentType, SerialObject* serialObject) {
+    switch (componentType)
+    {
+        case COMPONENT_TRANSFORM:
+            Transform_deserialize(&componentPool->transforms[componentPool->currentTransformCount-1], serialObject, componentPool);
+            break;
+        case COMPONENT_PLAYER_CONTROLLER:
+            PlayerController_deserialize(&componentPool->playerControllers[componentPool->currentPlayerControllerCount-1],serialObject);
+            break;
+        case COMPONENT_SPRITE_RENDERER:
+            SpriteRenderer_deserialize(&componentPool->spriteRenderers[componentPool->currentSpriteRendererCount-1],serialObject);
+            break;
+        case COMPONENT_MESH_RENDERER:
+            MeshRenderer_deserialize(&componentPool->meshRenderers[componentPool->currentMeshRendererCount-1],serialObject);
+            break;
+        default:
             break;
     }
 }

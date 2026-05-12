@@ -13,6 +13,7 @@
 #define TRANSFORM_PARENT_NULL 4294967295
 
 typedef struct GameObject_t GameObject;
+typedef struct ComponentPool_t ComponentPool;
 
 typedef enum TransformKeep_t {
     KEEP_WORLD,
@@ -68,5 +69,6 @@ mat4s Transform_getWorldMatrix(Transform* transform);
 bool Transform_isDirty(Transform* transform);
 
 SerialObject Transform_serialize(Transform* transform);
+void Transform_deserialize(Transform* transform, SerialObject* serialObject, ComponentPool* componentPool);
 
 #endif //CHERRYENGINE_TRANSFORM_H

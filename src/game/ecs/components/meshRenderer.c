@@ -15,3 +15,7 @@ SerialObject MeshRenderer_serialize(MeshRenderer* meshRenderer) {
 
     return obj;
 }
+
+void MeshRenderer_deserialize(MeshRenderer* meshRenderer, SerialObject* serialObject) {
+
+}

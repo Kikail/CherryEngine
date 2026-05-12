@@ -6,6 +6,7 @@
 #include <stdlib.h>
 
 #include "filePicker.h"
+#include "metaData.h"
 
 ResourceManager* ResourceManager_create() {
     ResourceManager* resourceManager = malloc(sizeof(ResourceManager));
@@ -72,18 +73,25 @@ Model* ResourceManager_loadModel(ResourceManager* resourceManager, const char* m
     return &resourceManager->models[resourceManager->numModels-1];
 }
 void ResourceManager_loadAllFilesFromDirectory(ResourceManager* resourceManager, char* directory) {
+    // Ici on charge tout les fichiers depuis directory
     FilePicker* filePicker = FilePicker_loadFiles(directory);
     for (int i = 0; i < filePicker->numFiles; i++) {
         CherryFile file = filePicker->files[i];
+
+        // Ici on reagit differement selon les differents types de fichier
+        // Il faudrait ne pas charger les fichiers directement selon leur type, mais uniqmuement les charger avec leur fichier metadata
+        // Avec les fichiers sauf metadata il faut verifier s il existe un fichier metadata
+
         switch (file.type) {
             case FILETYPE_TXT:      break;
-            case FILETYPE_PNG:      ResourceManager_loadTexture(resourceManager, file.path, true);break;
-            case FILETYPE_JPG:      ResourceManager_loadTexture(resourceManager, file.path, true);break;
-            case FILETYPE_SVG:      ResourceManager_loadTexture(resourceManager, file.path, true);break;
+            case FILETYPE_PNG:      ResourceManager_loadTexture(resourceManager, file.path, true); MetaData_check(file.path, file.path, file.type);break;
+            case FILETYPE_JPG:      ResourceManager_loadTexture(resourceManager, file.path, true); MetaData_check(file.path, file.path, file.type);break;
+            case FILETYPE_SVG:      ResourceManager_loadTexture(resourceManager, file.path, true); MetaData_check(file.path, file.path, file.type);break;
             case FILETYPE_MTL:      break;
             case FILETYPE_FS:       break;
             case FILETYPE_VS:       break;
-            case FILETYPE_OBJ:      ResourceManager_loadModel(resourceManager, file.path, true);break;
+            case FILETYPE_OBJ:      ResourceManager_loadModel(resourceManager, file.path, true); MetaData_check(file.path, file.path, file.type);break;
+            case FILETYPE_METADATA: break;
             case FILETYPE_NONE:     break;
         }
     }

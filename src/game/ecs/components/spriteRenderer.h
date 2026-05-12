@@ -14,5 +14,6 @@ typedef struct {
 
 void Component_SpriteRenderer_Update(SpriteRenderer* transform, GameObject* gameObject);
 SerialObject SpriteRenderer_serialize(SpriteRenderer* spriteRenderer);
+void SpriteRenderer_deserialize(SpriteRenderer* spriteRenderer, SerialObject* serialObject);
 
 #endif //CHERRYENGINE_SPRITERENDERER_H

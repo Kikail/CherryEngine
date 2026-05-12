@@ -9,7 +9,7 @@
 #include "resource/serializer.h"
 #include "utils/idMaker.h"
 
-#define SCENE_MAX_GAMEOBJECTS 1000
+#define SCENE_MAX_GAMEOBJECTS 100
 
 typedef struct Scene_t {
     char* name;
@@ -17,9 +17,10 @@ typedef struct Scene_t {
     unsigned int numGameObjects;
 }Scene;
 Scene* Scene_create(char* name);
-Scene* Scene_deserialize(SerialObject* sceneObject);
+Scene* Scene_deserialize(SerialObject* sceneObject, ComponentPool* componentPool);
 GameObject* Scene_addGameObject(Scene* scene, char* objectName);
-void Scene_updateScene(Scene* scene, ComponentPool* componentPoool, float deltaTime);
+GameObject* Scene_getGameObject(Scene* scene, unsigned int id);
+void Scene_updateScene(Scene* scene, ComponentPool* componentPoool, float deltaTime, Game* game);
 SerialObject Scene_serialize(Scene* scene, ComponentPool* componentPool);
 
 #endif //CHERRYENGINE_SCENE_H
