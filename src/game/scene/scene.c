@@ -2,6 +2,9 @@
 // Created by killian on 4/9/26.
 //
 #include "scene.h"
+
+#include <string.h>
+
 #include "utils/idMaker.h"
 #include "utils/utils.h"
 #include "game/ecs/componentPool.h"
@@ -15,7 +18,7 @@ Scene* Scene_create(char* name) {
             DEBUG_LOG("SCENE::Scene_create failed to malloc scene");
     #endif
 
-    scene->name = name;
+    strcpy(scene->name,name);
     scene->numGameObjects = 0;
     return scene;
 }
@@ -26,7 +29,7 @@ GameObject* Scene_addGameObject(Scene* scene, char* objectName) {
         #endif
         return NULL;
     }
-    scene->gameObjects[scene->numGameObjects].name = objectName;
+    strcpy(scene->gameObjects[scene->numGameObjects].name, objectName);
     if (Id_createId(&scene->gameObjects[scene->numGameObjects].id)) {
         scene->gameObjects[scene->numGameObjects].id = Id_makeGameObject(scene->gameObjects[scene->numGameObjects].id);
     }
@@ -110,6 +113,8 @@ Scene* Scene_deserialize(SerialObject* sceneObject, ComponentPool* componentPool
         return NULL;
     }
 
+
+
     // Ici on recupere le nom initial de la scenes
     SerialValue sceneNameValue = SerialObject_GetByName(sceneObject, "name");
     char* sceneName = SerialValue_GetStringValue(&sceneNameValue);
@@ -128,6 +133,7 @@ Scene* Scene_deserialize(SerialObject* sceneObject, ComponentPool* componentPool
 
         // Ici on creer un gameObject a partir du nom charger
         GameObject* gameObject = Scene_addGameObject(scene, gameObjectName);
+        gameObject->componentCount = 0;
 
         // Nous recuperons ensuite chaque donnee du gameObject et le mettons dans la structure creer
         SerialValue gameObjectMaskValue = SerialObject_GetByName(&gameObjectSerialized, "mask");
@@ -145,6 +151,7 @@ Scene* Scene_deserialize(SerialObject* sceneObject, ComponentPool* componentPool
     // Nous allons ensuiter recreer tout les composants et les assigner aux bons objets par la suite
     // Nous recreerons ainsi la hierarchie sauvegardee dans le fichier de scene
     SerialObject* componentPoolSerialObject = SerialObject_GetObjectByName(sceneObject, "ComponentPool");
+    if (!gameObjectSerialObject || !componentPoolSerialObject) return NULL;
     FOR_INF(componentPoolSerialObject->num_childrens) {
         // On charge chaque GameObject 1 par 1 et on charge ses donnees dans une structure
         struct SerialObject_t componentSerialized = componentPoolSerialObject->childrens[i];

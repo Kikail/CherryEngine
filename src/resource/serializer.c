@@ -170,7 +170,7 @@ SerialObject* SerialObject_GetObjectByName(SerialObject* so, const char* name) {
             return &so->childrens[i];
         }
     }
-    return so->num_childrens > 0 ? &so->childrens[0] : NULL;
+    return NULL;
 }
 
 // Fonction utilitaire pour concaténer dynamiquement

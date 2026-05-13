@@ -44,20 +44,37 @@ int main(int argc, char** argv)
 
     glEnable(GL_DEPTH_TEST);
 
+    ////////////////////////////////////////////////////
+    ///     Testing des scenes
+    ////////////////////////////////////////////////////
+    ComponentPool component_pool = ComponentPool_Create();
+    DEBUG_LOG("Creating the compone"
+              "5nt pool");
 
     ////////////////////////////////////////////////////
     ///     Chargement des donnees
     ////////////////////////////////////////////////////
     ResourceManager* resourceManager = Game_getResourceManager(game);
+    DEBUG_isValid(resourceManager);
     Shader* shader = ResourceManager_loadShader(resourceManager,"shaders/testingModels.vs","shaders/testingModels.fs", false);
+
     Shader* shaderSkybox = ResourceManager_loadShader(resourceManager,"shaders/skybox.vs","shaders/skybox.fs", false);
+
+    char right[256];GetPath("images/skybox/right.jpg", right);
+    char left[256];GetPath("images/skybox/left.jpg",left);
+    char top[256];GetPath("images/skybox/top.jpg",top);
+    char bottom[256];GetPath("images/skybox/bottom.jpg",bottom);
+    char front[256];GetPath("images/skybox/front.jpg",front);
+    char back[256];GetPath("images/skybox/back.jpg",back);
+
     char* faces[6] = {
-        GetPath("images/skybox/right.jpg"),
-        GetPath("images/skybox/left.jpg"),
-        GetPath("images/skybox/top.jpg"),
-        GetPath("images/skybox/bottom.jpg"),
-        GetPath("images/skybox/front.jpg"),
-        GetPath("images/skybox/back.jpg")};
+        right,
+        left,
+        top,
+        bottom,
+        front,
+        back
+    };
     unsigned int cubemapTexture = loadCubemap(faces, 6);
 
     ResourceManager_loadAllFilesFromDirectory(resourceManager, "/home/killian/Projects/C/CherryEngine/resources");
@@ -74,12 +91,7 @@ int main(int argc, char** argv)
         shader
     );
 
-    ////////////////////////////////////////////////////
-    ///     Testing des scenes
-    ////////////////////////////////////////////////////
-    ComponentPool component_pool = ComponentPool_Create();
-    DEBUG_LOG("Creating the compone"
-              "5nt pool");
+
 
     //Scene* scene = Scene_create("testScene");
 
@@ -100,11 +112,15 @@ int main(int argc, char** argv)
     }
     */
 
+
+
     FILE* f = fopen("/home/killian/Projects/C/CherryEngine/resources/scenes/test.csn", "r");
     SerialObject serialObject = SerialObject_DeserializeSingle(f);
     fclose(f);
     SerialObject_Print(&serialObject);
     Scene* scene = Scene_deserialize(&serialObject, &component_pool);
+
+
 
     /*
     SerialObject sceneObj = Scene_serialize(testScene, &component_pool);
@@ -115,7 +131,7 @@ int main(int argc, char** argv)
 
 
 
-    
+
 
     // Initialisation sécurisée du Transform
     Transform modelTransform = {0};
@@ -155,6 +171,7 @@ int main(int argc, char** argv)
         }
 
         Game_update(game, deltaTime);
+
 
         // NOUVEAU : Calcul mathématique de la Caméra Orbitale
         vec3s camPos;
@@ -200,6 +217,7 @@ int main(int argc, char** argv)
         }
 
         //Scene_updateScene(scene, &component_pool, deltaTime);
+
 
         timeCheck += deltaTime;
         nbFrames++;

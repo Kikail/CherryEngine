@@ -20,7 +20,7 @@ typedef struct Game_t Game;
 typedef struct GameObject_t {
     uint32 component_mask;
     Component components[MAX_COMPONENT_PER_OBJECT]; uint32 componentCount;
-    char* name;
+    char name[128];
 
     // un id fonctionne de la sorte 10000000 00000000 00000000 00000000
     // 1 au debut si gameObject 0 sinon

@@ -49,6 +49,7 @@ bool ComponentPool_CreateComponent(ComponentPool* componentPool, ComponentType c
     {
         case COMPONENT_TRANSFORM:
             component->component_adress = componentPool->currentTransformCount;
+            memset(&componentPool->transforms[componentPool->currentTransformCount], 0, sizeof(Transform));
             componentPool->transforms[componentPool->currentTransformCount].id = component->id;
             componentPool->transforms[componentPool->currentTransformCount].parentId = TRANSFORM_PARENT_NULL;
             componentPool->currentTransformCount += 1;

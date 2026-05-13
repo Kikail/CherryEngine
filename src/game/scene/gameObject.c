@@ -10,7 +10,7 @@ GameObject GameObject_Create(char* name){
     GameObject gameObject;
     gameObject.component_mask = 0;
     gameObject.componentCount = 0;
-    gameObject.name = name;
+    strcpy(gameObject.name,name);
     return gameObject;
 }
 bool GameObject_AddComponent(GameObject* gameObject, ComponentPool* componentPool, ComponentType componentType){

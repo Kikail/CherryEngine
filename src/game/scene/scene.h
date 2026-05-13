@@ -12,7 +12,7 @@
 #define SCENE_MAX_GAMEOBJECTS 100
 
 typedef struct Scene_t {
-    char* name;
+    char name[128];
     GameObject gameObjects[SCENE_MAX_GAMEOBJECTS];
     unsigned int numGameObjects;
 }Scene;

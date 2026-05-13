@@ -14,18 +14,7 @@
 #include "render/model.h"
 #include "render/shader.h"
 
-static char* GetPath(const char* file) {
-    // Le mot-clé static déplace la variable de la pile vers la mémoire globale
-    static char finalPath[512];
-
-    // On nettoie le buffer pour éviter les résidus d'appels précédents
-    memset(finalPath, 0, sizeof(finalPath));
-
-    // Sécurité : snprintf empêche de dépasser les 512 caractères
-    snprintf(finalPath, sizeof(finalPath), "%s/%s", RESOURCES_PATH, file);
-
-    return finalPath;
-}
+void GetPath(const char* file, char* path);
 
 typedef enum CherryResourceType_t {
     CHERRY_RESOURCE_TYPE_NONE,
