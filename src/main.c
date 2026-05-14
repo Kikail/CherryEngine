@@ -56,10 +56,10 @@ int main(int argc, char** argv)
     ////////////////////////////////////////////////////
     ResourceManager* resourceManager = Game_getResourceManager(game);
     DEBUG_isValid(resourceManager);
+
+    /*
     Shader* shader = ResourceManager_loadShader(resourceManager,"shaders/testingModels.vs","shaders/testingModels.fs", false);
-
     Shader* shaderSkybox = ResourceManager_loadShader(resourceManager,"shaders/skybox.vs","shaders/skybox.fs", false);
-
     char right[256];GetPath("images/skybox/right.jpg", right);
     char left[256];GetPath("images/skybox/left.jpg",left);
     char top[256];GetPath("images/skybox/top.jpg",top);
@@ -76,10 +76,12 @@ int main(int argc, char** argv)
         back
     };
     unsigned int cubemapTexture = loadCubemap(faces, 6);
+    */
 
     ResourceManager_loadAllFilesFromDirectory(resourceManager, "/home/killian/Projects/C/CherryEngine/resources");
     ResourceManager_showResources(resourceManager);
 
+    /*
     Material material = Material_create(
         (vec3s){1.0,0.0,1.0},
         (vec3s){1.0,1.0,1.0},
@@ -90,7 +92,7 @@ int main(int argc, char** argv)
         0.75,
         shader
     );
-
+    */
 
 
     //Scene* scene = Scene_create("testScene");
@@ -183,6 +185,7 @@ int main(int argc, char** argv)
         vec3s up = {0.0f, 1.0f, 0.0f};     // Le vecteur haut
         mat4s view = glms_lookat(camPos, target, up);
 
+        /*
         mat4s viewSkybox = view;
         viewSkybox.raw[3][0] = 0.0f; // Annule X
         viewSkybox.raw[3][1] = 0.0f; // Annule Y
@@ -215,7 +218,7 @@ int main(int argc, char** argv)
 
             Model_Draw(&resourceManager->models[0], shader);
         }
-
+        */
         //Scene_updateScene(scene, &component_pool, deltaTime);
 
 

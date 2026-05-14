@@ -109,6 +109,7 @@ add_executable(CherryEngine
         src/utils/idMaker.c
         src/resource/metaData.h
         src/resource/metaData.c
+        src/render/texture.h
 )
 
 # Configuration de l'inclusion des headers

@@ -22,6 +22,7 @@ typedef struct Model_t {
     char* directory;
     bool gammaCorrection;
     char* filepath;
+    unsigned int signature;
 }Model;
 
 unsigned int TextureFromFile(char* path, bool gamma, vec2s* size);

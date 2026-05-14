@@ -11,8 +11,12 @@
 #include <stdio.h>
 
 #include "filePicker.h"
+#include "metaData.h"
 #include "render/model.h"
 #include "render/shader.h"
+#include "render/texture.h"
+
+#define CHERRY_RESOURCE_SIGNATURE_NULL 4294967295
 
 void GetPath(const char* file, char* path);
 
@@ -27,10 +31,11 @@ typedef struct CherryResource_t {
     char path[CHERRY_MAX_FILEPATH_LENGTH];
     CherryResourceType type;
     unsigned int index;
+    unsigned int signature;
 }CherryResource;
 
 typedef struct ResourceManager_t {
-    unsigned int textures[RESOURCE_MAX_TEXTURES]; unsigned int numTextures;
+    CherryTexture textures[RESOURCE_MAX_TEXTURES]; unsigned int numTextures;
     Shader shaders[RESOURCE_MAX_SHADERS]; unsigned int numShaders;
     Model models[RESOURCE_MAX_MODELS]; unsigned int numModels;
     CherryResource resources[RESOURCE_MAX_TEXTURES + RESOURCE_MAX_SHADERS + RESOURCE_MAX_MODELS];
@@ -38,10 +43,15 @@ typedef struct ResourceManager_t {
 }ResourceManager;
 ResourceManager* ResourceManager_create();
 void ResourceManager_loadAllFilesFromDirectory(ResourceManager* resourceManager, char* directory);
-unsigned int ResourceManager_loadTexture(ResourceManager* resourceManager, const char* texturePath, bool absolutePath);
-Shader* ResourceManager_loadShader(ResourceManager* resourceManager, const char* vsPath, const char* fsPath, bool absolutePath);
-Model* ResourceManager_loadModel(ResourceManager* resourceManager, const char* modelPath, bool absolutePath);
-CherryResource* ResourceManager_addResource(ResourceManager* resourceManager, char* path, CherryResourceType type, unsigned int index);
+CherryTexture* ResourceManager_loadTexture(ResourceManager* resourceManager, MetaData* metaData, bool absolutePath);
+Shader* ResourceManager_loadShader(ResourceManager* resourceManager, const char* vsPath, const char* fsPath, MetaData* metaData, bool absolutePath);
+Model* ResourceManager_loadModel(ResourceManager* resourceManager, MetaData* metaData, bool absolutePath);
+CherryResource* ResourceManager_addResource(ResourceManager* resourceManager, char* path, CherryResourceType type, unsigned int index, unsigned int signature);
 void ResourceManager_showResources(ResourceManager* resourceManager);
+void ResourceManager_loadResource(ResourceManager* resourceManager, char* path, FileType filetype);
+
+CherryTexture* ResourceManager_getTextureBySignature(ResourceManager* resourceManager, unsigned int signature);
+Shader* ResourceManager_getShaderBySignature(ResourceManager* resourceManager, unsigned int signature);
+Model* ResourceManager_getModelBySignature(ResourceManager* resourceManager, unsigned int signature);
 
 #endif //CHERRYENGINE_RESOURCEMANAGER_H

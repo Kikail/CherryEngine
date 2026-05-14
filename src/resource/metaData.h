@@ -19,6 +19,7 @@
 #include <ctype.h>
 
 #include "filePicker.h"
+#include "serializer.h"
 
 typedef struct MetaData_t{
     char path[512];
@@ -29,6 +30,7 @@ typedef struct MetaData_t{
 
 MetaData MetaData_create(char* filepath, char* name, FileType filetype);
 bool MetaData_save(MetaData* metaData);
+MetaData MetaData_load(SerialObject* serial_object);
 bool MetaData_doExists(char* filepath);
 void MetaData_check(char* filepath, char* name, FileType filetype);
 void Path_ReplaceExtension(char* dest, const char* src, const char* newExt);

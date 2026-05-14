@@ -12,6 +12,7 @@ typedef struct Shader_t {
     unsigned int shaderID;
     char vertexPath[128];
     char fragmentPath[128];
+    unsigned int signature;
 }Shader;
 
 bool Shader_load(Shader* shader, char* vs, char* fs);

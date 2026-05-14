@@ -37,6 +37,24 @@ bool MetaData_save(MetaData* metaData) {
 
     return true;
 }
+MetaData MetaData_load(SerialObject* serial_object) {
+    MetaData metaData;
+
+    SerialValue path = SerialObject_GetByName(serial_object, "path");
+    SerialValue filename = SerialObject_GetByName(serial_object, "filename");
+    SerialValue signature = SerialObject_GetByName(serial_object, "signature");
+    SerialValue type = SerialObject_GetByName(serial_object, "type");
+
+    char* p = SerialValue_GetStringValue(&path);
+    char* fn = SerialValue_GetStringValue(&filename);
+    strcpy(metaData.path, p);
+    strcpy(metaData.name, fn);
+
+    metaData.signature = SerialValue_GetUintValue(&signature);
+    metaData.type = SerialValue_GetUintValue(&type);
+
+    return metaData;
+}
 
 void MetaData_check(char* filepath, char* name, FileType filetype) {
     if (!MetaData_doExists(filepath)) {
