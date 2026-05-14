@@ -64,6 +64,7 @@ bool ComponentPool_CreateComponent(ComponentPool* componentPool, ComponentType c
             break;
         case COMPONENT_MESH_RENDERER:
             component->component_adress = componentPool->currentMeshRendererCount;
+            memset(&componentPool->meshRenderers[componentPool->currentMeshRendererCount], 0, sizeof(MeshRenderer));
             componentPool->currentMeshRendererCount += 1;
             break;
     }
@@ -120,7 +121,7 @@ void ComponentPool_UpdateComponent(ComponentPool* componentPool, ComponentType c
             Component_SpriteRenderer_Update(component, gameObject);
             break;
         case COMPONENT_MESH_RENDERER:
-            Component_MeshRenderer_Update(component, gameObject);
+            Component_MeshRenderer_Update(component, gameObject, game);
             break;
     }
 }

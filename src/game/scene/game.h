@@ -11,6 +11,9 @@
 #include "../../resource/resourceManager.h"
 #include "game/input/input.h"
 #include "render/camera.h"
+
+typedef struct ComponentPool_t ComponentPool;
+
 /**
  * \brief Une structure de donnee regroupant toutes les infos utiles pour les components
  */
@@ -19,7 +22,9 @@ typedef struct Game_t {
     GLFWwindow* window;
     PhysicsWorld* physicsWorld;
     ResourceManager* resourceManager;
+    ComponentPool* componentPool;
     mat4s perspective;
+    mat4s view;
     Input* input;
 }Game;
 Game* Game_init();
@@ -31,6 +36,7 @@ GLFWwindow* Game_getWindow(Game* game);
 PhysicsWorld* Game_getPhysicsWorld(Game* game);
 ResourceManager* Game_getResourceManager(Game* game);
 mat4s Game_getPerspective(Game* game);
+mat4s Game_getView(Game* game);
 Input* Game_getInput(Game* game);
 
 #endif //CHERRYENGINE_GAME_H

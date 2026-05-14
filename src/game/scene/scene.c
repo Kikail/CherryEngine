@@ -38,6 +38,8 @@ GameObject* Scene_addGameObject(Scene* scene, char* objectName) {
             DEBUG_LOG("SCENE::Scene_addGameObject max id reached");
         #endif
     }
+    scene->gameObjects[scene->numGameObjects].componentCount = 0;
+    scene->gameObjects[scene->numGameObjects].component_mask = 0;
     scene->numGameObjects++;
     return &scene->gameObjects[scene->numGameObjects - 1];
 }
@@ -173,6 +175,12 @@ Scene* Scene_deserialize(SerialObject* sceneObject, ComponentPool* componentPool
 
         // On ajoute le component dans le gameObject et dans le componentPool
         GameObject* gameObject = Scene_getGameObject(scene, component.parentId);
+        if (gameObject == NULL) {
+            #ifdef DEBUG
+                        printf("SCENE::Scene_deserialize gameObject not found for parentId: %u\n", component.parentId);
+            #endif
+            continue;
+        }
         gameObject->components[gameObject->componentCount].component_type = component.component_type;
         gameObject->components[gameObject->componentCount].parentId = component.parentId;
         gameObject->components[gameObject->componentCount].id = component.id;

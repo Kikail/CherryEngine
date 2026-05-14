@@ -2,6 +2,7 @@
 // Created by killian on 4/9/26.
 //
 #include "game.h"
+#include "../ecs/componentPool.h"
 
 int Game_initWindow(Game* game) {
     #ifdef DEBUG
@@ -110,6 +111,13 @@ mat4s Game_getPerspective(Game* game) {
             DEBUG_LOG("GAME::Game_getPerspective game is NULL");
     #endif
     return game->perspective;
+}
+mat4s Game_getView(Game* game) {
+    #ifdef DEBUG
+        if (game == NULL)
+            DEBUG_LOG("GAME::Game_getView game is NULL");
+    #endif
+    return game->view;
 }
 Input* Game_getInput(Game* game) {
     #ifdef DEBUG

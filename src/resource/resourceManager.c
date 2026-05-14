@@ -110,6 +110,9 @@ void ResourceManager_loadAllFilesFromDirectory(ResourceManager* resourceManager,
             case FILETYPE_NONE:     break;
         }
     }
+#ifdef DEBUG
+    ResourceManager_showResources(resourceManager);
+#endif
 }
 void ResourceManager_loadResource(ResourceManager* resourceManager, char* path, FileType filetype) {
     FILE* f = fopen(path, "r");
