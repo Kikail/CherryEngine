@@ -67,14 +67,6 @@ int main(int argc, char** argv)
     SerialObject_Print(&serialObject);
     Scene* scene = Scene_deserialize(&serialObject, game->componentPool);
 
-    // Permettant de sauvegarder la scene actuelle
-    /*
-    SerialObject sceneObj = Scene_serialize(testScene, &component_pool);
-    SerialObject_Print(&sceneObj);
-    FileSaver* fileSaver = FileSaver_create("/home/killian/Projects/C/CherryEngine/resources/scenes/test.csn", SerialObject_Serialize(&sceneObj));
-    FileSaver_save(fileSaver);
-    */
-
     float timeCheck = 0.0f;
     int nbFrames = 0;
 
@@ -90,6 +82,7 @@ int main(int argc, char** argv)
         currentFrame = (float)glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
+        game->currentFrame = currentFrame;
 
         // Raffraichissement du titre avec les fps
         if (timeCheck >= 1.0f) {
@@ -126,6 +119,12 @@ int main(int argc, char** argv)
         // Affichage graphique
         glfwSwapBuffers(Game_getWindow(game));
     }
+
+    // Permettant de sauvegarder la scene actuelle a la fermeture de l'application
+    SerialObject sceneObj = Scene_serialize(scene, game->componentPool);
+    SerialObject_Print(&sceneObj);
+    FileSaver* fileSaver = FileSaver_create("/home/killian/Projects/C/CherryEngine/resources/scenes/test.csn", SerialObject_Serialize(&sceneObj));
+    FileSaver_save(fileSaver);
 
     cleanup(Game_getWindow(game));
     return EXIT_SUCCESS;

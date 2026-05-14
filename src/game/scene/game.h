@@ -26,6 +26,7 @@ typedef struct Game_t {
     mat4s perspective;
     mat4s view;
     Input* input;
+    float currentFrame;
 }Game;
 Game* Game_init();
 int Game_initWindow(Game* game);
