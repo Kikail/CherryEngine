@@ -44,7 +44,7 @@ typedef struct ResourceManager_t {
 ResourceManager* ResourceManager_create();
 void ResourceManager_loadAllFilesFromDirectory(ResourceManager* resourceManager, char* directory);
 CherryTexture* ResourceManager_loadTexture(ResourceManager* resourceManager, MetaData* metaData, bool absolutePath);
-Shader* ResourceManager_loadShader(ResourceManager* resourceManager, const char* vsPath, const char* fsPath, MetaData* metaData, bool absolutePath);
+Shader* ResourceManager_loadShader(ResourceManager* resourceManager, MetaData* metaData, bool absolutePath);
 Model* ResourceManager_loadModel(ResourceManager* resourceManager, MetaData* metaData, bool absolutePath);
 CherryResource* ResourceManager_addResource(ResourceManager* resourceManager, char* path, CherryResourceType type, unsigned int index, unsigned int signature);
 void ResourceManager_showResources(ResourceManager* resourceManager);

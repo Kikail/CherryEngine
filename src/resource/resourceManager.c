@@ -42,7 +42,7 @@ CherryTexture* ResourceManager_loadTexture(ResourceManager* resourceManager, Met
     resourceManager->numTextures += 1;
     return &resourceManager->textures[resourceManager->numTextures-1];
 }
-Shader* ResourceManager_loadShader(ResourceManager* resourceManager, const char* vsPath, const char* fsPath, MetaData* metaData, bool absolutePath) {
+Shader* ResourceManager_loadShader(ResourceManager* resourceManager, MetaData* metaData, bool absolutePath) {
     if (resourceManager->numShaders >= RESOURCE_MAX_SHADERS) {
         #ifdef DEBUG
                 DEBUG_LOG("RESOURCE_MANAGER::ResourceManager_loadShader max shaders reach");
@@ -50,14 +50,17 @@ Shader* ResourceManager_loadShader(ResourceManager* resourceManager, const char*
         return NULL;
     }
 
+    char fsPath[512];
+    Path_ReplaceExtension(fsPath, metaData->path, ".fs");
+
     if (absolutePath) {
-        Shader_load(&resourceManager->shaders[resourceManager->numShaders],vsPath,fsPath);
-        ResourceManager_addResource(resourceManager, vsPath, CHERRY_RESOURCE_TYPE_SHADER, resourceManager->numShaders, metaData->signature);
+        Shader_load(&resourceManager->shaders[resourceManager->numShaders],metaData->path,fsPath);
+        ResourceManager_addResource(resourceManager, metaData->path, CHERRY_RESOURCE_TYPE_SHADER, resourceManager->numShaders, metaData->signature);
     }
     else {
         char fs_path[512];
         char vs_path[512];
-        GetPath(vsPath,vs_path);
+        GetPath(metaData->path,vs_path);
         GetPath(fsPath,fs_path);
         Shader_load(&resourceManager->shaders[resourceManager->numShaders],vs_path,fs_path);
         ResourceManager_addResource(resourceManager, vs_path, CHERRY_RESOURCE_TYPE_SHADER, resourceManager->numShaders, metaData->signature);
@@ -104,7 +107,7 @@ void ResourceManager_loadAllFilesFromDirectory(ResourceManager* resourceManager,
             case FILETYPE_SVG:      MetaData_check(file.path, file.path, file.type);break;
             case FILETYPE_MTL:      break;
             case FILETYPE_FS:       break;
-            case FILETYPE_VS:       break;
+            case FILETYPE_VS:       MetaData_check(file.path, file.path, file.type);break;
             case FILETYPE_OBJ:      MetaData_check(file.path, file.path, file.type);break;
             case FILETYPE_METADATA: ResourceManager_loadResource(resourceManager, file.path, file.type);break;
             case FILETYPE_NONE:     break;
@@ -127,7 +130,7 @@ void ResourceManager_loadResource(ResourceManager* resourceManager, char* path, 
         case FILETYPE_SVG:      ResourceManager_loadTexture(resourceManager, &metaData, true);break;
         case FILETYPE_MTL:      break;
         case FILETYPE_FS:       break;
-        case FILETYPE_VS:       break;
+        case FILETYPE_VS:       ResourceManager_loadShader(resourceManager, &metaData, true);break;
         case FILETYPE_OBJ:      ResourceManager_loadModel(resourceManager, &metaData, true);break;
         case FILETYPE_METADATA: break;
         case FILETYPE_NONE:     break;
