@@ -11,7 +11,8 @@ typedef struct GameObject_t GameObject;
 typedef struct Transform_t Transform;
 
 typedef struct {
-    unsigned int signature;
+    unsigned int modelSignature;
+    unsigned int shaderSignature;
     Model* model;
     Shader* shader;
 } MeshRenderer;

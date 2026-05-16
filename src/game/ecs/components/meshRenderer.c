@@ -11,7 +11,7 @@ void Component_MeshRenderer_Update(MeshRenderer* meshRenderer, GameObject* gameO
         #ifdef DEBUG
             DEBUG_LOG("MESHRENDERER::Component_MeshRenderer_Update model is null trying to load");
         #endif
-        Model* model = ResourceManager_getModelBySignature(Game_getResourceManager(game), meshRenderer->signature);
+        Model* model = ResourceManager_getModelBySignature(Game_getResourceManager(game), meshRenderer->modelSignature);
         if (model == NULL) {
             #ifdef DEBUG
                 DEBUG_LOG("MESHRENDERER::Component_MeshRenderer_Update model is null failed to load");
@@ -26,16 +26,21 @@ void Component_MeshRenderer_Update(MeshRenderer* meshRenderer, GameObject* gameO
         }
     }
     if (meshRenderer->shader == NULL) {
-        meshRenderer->shader = malloc(sizeof(Shader));
-        if (!Shader_load(meshRenderer->shader, "/home/killian/Projects/C/CherryEngine/resources/shaders/debugModel.vs", "/home/killian/Projects/C/CherryEngine/resources/shaders/debugModel.fs")) {
+        #ifdef DEBUG
+                DEBUG_LOG("MESHRENDERER::Component_MeshRenderer_Update shader is null trying to load");
+        #endif
+        Shader* shader = ResourceManager_getShaderBySignature(Game_getResourceManager(game), meshRenderer->shaderSignature);
+        if (shader == NULL) {
             #ifdef DEBUG
                         DEBUG_LOG("MESHRENDERER::Component_MeshRenderer_Update shader is null failed to load");
             #endif
+            return;
         }
         else {
             #ifdef DEBUG
                         DEBUG_LOG("MESHRENDERER::Component_MeshRenderer_Update shader loaded successfully");
             #endif
+            meshRenderer->shader = shader;
         }
     }
     if (meshRenderer->model != NULL && meshRenderer->shader != NULL) {
@@ -64,13 +69,19 @@ void Component_MeshRenderer_Update(MeshRenderer* meshRenderer, GameObject* gameO
 SerialObject MeshRenderer_serialize(MeshRenderer* meshRenderer) {
     SerialObject obj = SerialObject_create("MeshRenderer");
 
-    SerialValue signatureValue = SerialValue_create_uint("signature", meshRenderer->signature);
+    SerialValue signatureValue = SerialValue_create_uint("modelSignature", meshRenderer->modelSignature);
     SerialObject_AddSerialValue(&obj, &signatureValue);
+
+    SerialValue shaderValue = SerialValue_create_uint("shaderSignature", meshRenderer->shaderSignature);
+    SerialObject_AddSerialValue(&obj, &shaderValue);
 
     return obj;
 }
 
 void MeshRenderer_deserialize(MeshRenderer* meshRenderer, SerialObject* serialObject) {
-    SerialValue signatureValue = SerialObject_GetByName(serialObject,"signature");
-    meshRenderer->signature = SerialValue_GetUintValue(&signatureValue);
+    SerialValue signatureValue = SerialObject_GetByName(serialObject,"modelSignature");
+    meshRenderer->modelSignature = SerialValue_GetUintValue(&signatureValue);
+
+    SerialValue shaderValue = SerialObject_GetByName(serialObject,"shaderSignature");
+    meshRenderer->shaderSignature = SerialValue_GetUintValue(&shaderValue);
 }

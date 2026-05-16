@@ -55,6 +55,8 @@ Shader* ResourceManager_loadShader(ResourceManager* resourceManager, MetaData* m
 
     if (absolutePath) {
         Shader_load(&resourceManager->shaders[resourceManager->numShaders],metaData->path,fsPath);
+        resourceManager->shaders[resourceManager->numShaders].signature = metaData->signature;
+        printf("%s loaded : %u\n", metaData->path, resourceManager->shaders[resourceManager->numShaders].signature);
         ResourceManager_addResource(resourceManager, metaData->path, CHERRY_RESOURCE_TYPE_SHADER, resourceManager->numShaders, metaData->signature);
     }
     else {
@@ -63,10 +65,10 @@ Shader* ResourceManager_loadShader(ResourceManager* resourceManager, MetaData* m
         GetPath(metaData->path,vs_path);
         GetPath(fsPath,fs_path);
         Shader_load(&resourceManager->shaders[resourceManager->numShaders],vs_path,fs_path);
+        resourceManager->shaders[resourceManager->numShaders].signature = metaData->signature;
         ResourceManager_addResource(resourceManager, vs_path, CHERRY_RESOURCE_TYPE_SHADER, resourceManager->numShaders, metaData->signature);
     }
     resourceManager->numShaders += 1;
-    resourceManager->shaders[resourceManager->numShaders-1].signature = metaData->signature;
     return &resourceManager->shaders[resourceManager->numShaders-1];
 }
 Model* ResourceManager_loadModel(ResourceManager* resourceManager, MetaData* metaData, bool absolutePath) {
@@ -173,12 +175,13 @@ CherryTexture* ResourceManager_getTextureBySignature(ResourceManager* resourceMa
 }
 Shader* ResourceManager_getShaderBySignature(ResourceManager* resourceManager, unsigned int signature) {
     for (int i = 0; i < resourceManager->numShaders; i++) {
+        printf("%u : %u\n",signature, resourceManager->shaders[i].signature);
         if (resourceManager->shaders[i].signature == signature) {
             return &resourceManager->shaders[i];
         }
     }
 #ifdef DEBUG
-    DEBUG_LOG("RESOURCE_MANAGER::ResourceManager_getShaderBySignature failed to find texture");
+    DEBUG_LOG("RESOURCE_MANAGER::ResourceManager_getShaderBySignature failed to find shader");
 #endif
     return NULL;
 }
