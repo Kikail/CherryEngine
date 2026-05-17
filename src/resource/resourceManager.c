@@ -42,6 +42,28 @@ CherryTexture* ResourceManager_loadTexture(ResourceManager* resourceManager, Met
     resourceManager->numTextures += 1;
     return &resourceManager->textures[resourceManager->numTextures-1];
 }
+Material* ResourceManager_loadMaterial(ResourceManager* resourceManager, MetaData* metaData, bool absolutePath) {
+    if (resourceManager->numMaterials >= RESOURCE_MAX_MATERIALS) {
+        #ifdef DEBUG
+                DEBUG_LOG("RESOURCE_MANAGER::ResourceManager_loadMaterial max materials reach");
+        #endif
+        return NULL;
+    }
+    if (absolutePath) {
+        resourceManager->materials[resourceManager->numMaterials] = Material_loadFromFile(metaData->path);
+        resourceManager->materials[resourceManager->numMaterials].signature = metaData->signature;
+        ResourceManager_addResource(resourceManager, metaData->path, CHERRY_RESOURCE_TYPE_MATERIAL, resourceManager->numMaterials, metaData->signature);
+    }
+    else {
+        char path[512];
+        GetPath(metaData->path,path);
+        resourceManager->materials[resourceManager->numMaterials] = Material_loadFromFile(path);
+        resourceManager->materials[resourceManager->numMaterials].signature = metaData->signature;
+        ResourceManager_addResource(resourceManager, path, CHERRY_RESOURCE_TYPE_MATERIAL, resourceManager->numMaterials, metaData->signature);
+    }
+    resourceManager->numMaterials += 1;
+    return &resourceManager->materials[resourceManager->numMaterials - 1];
+}
 Shader* ResourceManager_loadShader(ResourceManager* resourceManager, MetaData* metaData, bool absolutePath) {
     if (resourceManager->numShaders >= RESOURCE_MAX_SHADERS) {
         #ifdef DEBUG
@@ -111,6 +133,7 @@ void ResourceManager_loadAllFilesFromDirectory(ResourceManager* resourceManager,
             case FILETYPE_FS:       break;
             case FILETYPE_VS:       MetaData_check(file.path, file.path, file.type);break;
             case FILETYPE_OBJ:      MetaData_check(file.path, file.path, file.type);break;
+            case FILETYPE_MATERIAL: MetaData_check(file.path, file.path, file.type);break;
             case FILETYPE_METADATA: ResourceManager_loadResource(resourceManager, file.path, file.type);break;
             case FILETYPE_NONE:     break;
         }
@@ -134,6 +157,7 @@ void ResourceManager_loadResource(ResourceManager* resourceManager, char* path, 
         case FILETYPE_FS:       break;
         case FILETYPE_VS:       ResourceManager_loadShader(resourceManager, &metaData, true);break;
         case FILETYPE_OBJ:      ResourceManager_loadModel(resourceManager, &metaData, true);break;
+        case FILETYPE_MATERIAL: ResourceManager_loadMaterial(resourceManager, &metaData, true);break;
         case FILETYPE_METADATA: break;
         case FILETYPE_NONE:     break;
     }
@@ -154,6 +178,7 @@ void ResourceManager_showResources(ResourceManager* resourceManager) {
             case CHERRY_RESOURCE_TYPE_MODEL:printf("MODEL"); break;
             case CHERRY_RESOURCE_TYPE_SHADER:printf("SHADER"); break;
             case CHERRY_RESOURCE_TYPE_TEXTURE:printf("TEXTURE"); break;
+            case CHERRY_RESOURCE_TYPE_MATERIAL:printf("MATERIAL"); break;
             case CHERRY_RESOURCE_TYPE_NONE:printf("NONE"); break;
         }
         printf(" , index:%u , signature:%u )\n", resource->index, resource->signature);
@@ -193,6 +218,17 @@ Model* ResourceManager_getModelBySignature(ResourceManager* resourceManager, uns
     }
 #ifdef DEBUG
     DEBUG_LOG("RESOURCE_MANAGER::ResourceManager_getModelBySignature failed to find texture");
+#endif
+    return NULL;
+}
+Material* ResourceManager_getMaterialBySignature(ResourceManager* resourceManager, unsigned int signature) {
+    for (int i = 0; i < resourceManager->numMaterials; i++) {
+        if (resourceManager->materials[i].signature == signature) {
+            return &resourceManager->materials[i];
+        }
+    }
+#ifdef DEBUG
+    DEBUG_LOG("RESOURCE_MANAGER::ResourceManager_getMaterialBySignature failed to find material");
 #endif
     return NULL;
 }

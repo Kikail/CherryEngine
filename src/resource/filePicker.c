@@ -42,6 +42,9 @@ FileType getFileType(const char* extension) {
     else if (strcmp(extension, "meta") == 0) {
         fileType = FILETYPE_METADATA;
     }
+    else if (strcmp(extension, "mat") == 0) {
+        fileType = FILETYPE_MATERIAL;
+    }
 
     return fileType;
 }
@@ -122,6 +125,8 @@ void afficherExtension(FileType fileType) {
         case FILETYPE_FS:  printf("FS\n"); break;
         case FILETYPE_VS:  printf("VS\n"); break;
         case FILETYPE_OBJ: printf("OBJ\n"); break;
+        case FILETYPE_METADATA: printf("META\n"); break;
+        case FILETYPE_MATERIAL: printf("MAT\n"); break;
         case FILETYPE_NONE: printf("INCONNU\n"); break;
     }
 }
