@@ -30,11 +30,6 @@ vec3s lightPos = {1.5, 1.5, 1.5};
 
 // PROCHAINE ETAPE :
 // -CREER UNR FONCTION START POUR TOUT LES COMPONENTS POUR INITIALISER ( IE: CHARGER LE MODELE DANS MESHRENDERER ET SHADER )
-// -CREER ET CHARGER/SAUVEGARDER DES MATERIAUX POUR LES AFFICHER DANS LE MESHRENDERER
-
-// Stocker Material* materials[MAX_MATERIAL_PER_MODEL] dans Model dans Model ou MeshRenderer
-// et aussi enlever shaderSignature dans MeshRenderer et le remplacer par materialSignature
-
 // GROSSE UPDATE A FAIRE : empecher les fuites memoire
 
 // ==========================================

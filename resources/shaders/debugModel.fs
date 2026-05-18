@@ -39,6 +39,10 @@ void main()
     // On initialise avec la couleur diffuse de base du matériau
     vec3 color = vec3(1.0,1.0,1.0);
 
+    if(material.usingDiffuseTexture){
+        color = mix(texture(material.diffuseTexture, TexCoords).rgb, material.diffuse, 0.01);
+    }
+
     // Affichage direct sans calcul de lumière
     FragColor = vec4(color, 1.0);
 }

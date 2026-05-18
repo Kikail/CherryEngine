@@ -10,7 +10,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "material.h"
 #include "glad/glad.h"
+#include "utils/utils.h"
 
 unsigned int TextureFromFile(char* path, bool gamma, vec2s* size) {
     unsigned int textureID;
@@ -93,9 +95,15 @@ Model Model_create(char* path, bool gamma) {
     return model;
 }
 
-void Model_Draw(Model* model, Shader* shader) {
+void Model_Draw(Model* model, Material** materials, unsigned int materialCount) {
     for (unsigned int i = 0; i < model->numMeshes; i++) {
-        Mesh_draw(&model->meshes[i], shader);
+        if (i >= materialCount) {
+            #ifdef DEBUG
+                DEBUG_LOG("MODEL::Model_Draw more meshes than materials");
+            #endif
+            return;
+        }
+        Mesh_draw(&model->meshes[i], materials[i]);
     }
 }
 

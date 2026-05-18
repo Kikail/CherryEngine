@@ -25,25 +25,26 @@ void Component_MeshRenderer_Update(MeshRenderer* meshRenderer, GameObject* gameO
             meshRenderer->model = model;
         }
     }
-    if (meshRenderer->shader == NULL) {
+    if (meshRenderer->materialsLoaded < meshRenderer->materialCount) {
         #ifdef DEBUG
-                DEBUG_LOG("MESHRENDERER::Component_MeshRenderer_Update shader is null trying to load");
+                DEBUG_LOG("MESHRENDERER::Component_MeshRenderer_Update all materials are not loaded");
         #endif
-        Shader* shader = ResourceManager_getShaderBySignature(Game_getResourceManager(game), meshRenderer->shaderSignature);
-        if (shader == NULL) {
+        for (int i = 0;i < meshRenderer->materialCount;i++) {
+            Material* material = ResourceManager_getMaterialBySignature(game->resourceManager, meshRenderer->materialSignatures[i]);
+            if (material == NULL) {
+                #ifdef DEBUG
+                    DEBUG_LOG("MESHRENDERER::Component_MeshRenderer_Update failed to load material");
+                #endif
+                return;
+            }
+            meshRenderer->material[i] = material;
+            meshRenderer->materialsLoaded += 1;
             #ifdef DEBUG
-                        DEBUG_LOG("MESHRENDERER::Component_MeshRenderer_Update shader is null failed to load");
+                DEBUG_LOG("MESHRENDERER::Component_MeshRenderer_Update materials loaded successfully");
             #endif
-            return;
-        }
-        else {
-            #ifdef DEBUG
-                        DEBUG_LOG("MESHRENDERER::Component_MeshRenderer_Update shader loaded successfully");
-            #endif
-            meshRenderer->shader = shader;
         }
     }
-    if (meshRenderer->model != NULL && meshRenderer->shader != NULL) {
+    if (meshRenderer->model != NULL && meshRenderer->materialsLoaded == meshRenderer->materialCount) {
         Transform* transform = GameObject_GetComponent(gameObject, game->componentPool, COMPONENT_TRANSFORM);
         if (transform == NULL) {
             DEBUG_LOG("MESHRENDERER::Component_MeshRenderer_Update transform is null");
@@ -53,12 +54,12 @@ void Component_MeshRenderer_Update(MeshRenderer* meshRenderer, GameObject* gameO
         mat4s projection = Game_getPerspective(game);
         mat4s view = Game_getView(game);
 
-        Shader_use(meshRenderer->shader);
-        Shader_setMat4(meshRenderer->shader, "projection", projection);
-        Shader_setMat4(meshRenderer->shader, "view", view);
-        Shader_setMat4(meshRenderer->shader, "model", model);
+        Shader_use(meshRenderer->material[0]->shader);
+        Shader_setMat4(meshRenderer->material[0]->shader, "projection", projection);
+        Shader_setMat4(meshRenderer->material[0]->shader, "view", view);
+        Shader_setMat4(meshRenderer->material[0]->shader, "model", model);
 
-        Model_Draw(meshRenderer->model, meshRenderer->shader);
+        Model_Draw(meshRenderer->model, meshRenderer->material, meshRenderer->materialCount);
     }
     else {
         #ifdef DEBUG
@@ -66,14 +67,30 @@ void Component_MeshRenderer_Update(MeshRenderer* meshRenderer, GameObject* gameO
         #endif
     }
 }
+
+void GetStringNumber(unsigned int number, char* string) {
+    char buffer[128] = "materialSignature";
+    char numberString[5];
+    sprintf(numberString,"%u",number);
+    strcat(buffer,numberString);
+    strcpy(string, buffer);
+}
+
 SerialObject MeshRenderer_serialize(MeshRenderer* meshRenderer) {
     SerialObject obj = SerialObject_create("MeshRenderer");
 
     SerialValue signatureValue = SerialValue_create_uint("modelSignature", meshRenderer->modelSignature);
     SerialObject_AddSerialValue(&obj, &signatureValue);
 
-    SerialValue shaderValue = SerialValue_create_uint("shaderSignature", meshRenderer->shaderSignature);
-    SerialObject_AddSerialValue(&obj, &shaderValue);
+    SerialValue materialCountValue = SerialValue_create_uint("materialCount", meshRenderer->materialCount);
+    SerialObject_AddSerialValue(&obj, &materialCountValue);
+
+    for (int i = 0;i < meshRenderer->materialCount;i++) {
+        char buffer[128];
+        GetStringNumber(i, buffer);
+        SerialValue materialSignatureValue = SerialValue_create_uint(buffer, meshRenderer->material[i]->signature);
+        SerialObject_AddSerialValue(&obj, &materialSignatureValue);
+    }
 
     return obj;
 }
@@ -82,6 +99,13 @@ void MeshRenderer_deserialize(MeshRenderer* meshRenderer, SerialObject* serialOb
     SerialValue signatureValue = SerialObject_GetByName(serialObject,"modelSignature");
     meshRenderer->modelSignature = SerialValue_GetUintValue(&signatureValue);
 
-    SerialValue shaderValue = SerialObject_GetByName(serialObject,"shaderSignature");
-    meshRenderer->shaderSignature = SerialValue_GetUintValue(&shaderValue);
+    SerialValue materialCountValue = SerialObject_GetByName(serialObject,"materialCount");
+    meshRenderer->materialCount = SerialValue_GetUintValue(&materialCountValue);
+
+    for (int i = 0;i < meshRenderer->materialCount;i++) {
+        char buffer[128];
+        GetStringNumber(i, buffer);
+        SerialValue materialSignatureValue = SerialObject_GetByName(serialObject,buffer);
+        meshRenderer->materialSignatures[i] = SerialValue_GetUintValue(&materialSignatureValue);
+    }
 }

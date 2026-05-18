@@ -8,7 +8,7 @@
 #include "stdbool.h"
 #include "string.h"
 
-#define FILE_SAVER_BUFFER_SIZE 5096
+#define FILE_SAVER_BUFFER_SIZE 100000
 
 typedef struct FileSaver_t {
     char* filepath;

@@ -9,6 +9,8 @@
 #include <cglm/struct.h>
 #include "shader.h"
 
+typedef struct Material_t Material;
+
 typedef struct Vertex_t {
     vec3s position;
     vec3s normal;
@@ -35,6 +37,6 @@ typedef struct Mesh_t {
 
 Mesh Mesh_create(Vertex* vertices, unsigned int nbVertices, unsigned int* indices, unsigned int nbIndices, Texture* textures, unsigned int nbTextures);
 void Mesh_setup(Mesh* mesh);
-void Mesh_draw(Mesh* mesh, Shader* shader);
+void Mesh_draw(Mesh* mesh, Material* material);
 
 #endif //CHERRYENGINE_MESH_H

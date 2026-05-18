@@ -164,7 +164,7 @@ SerialObject Material_serialize(Material* material) {
     SerialValue usingDiffuseTexture = SerialValue_create_int("usingDiffuseTexture", material->usingDiffuseTexture);
     SerialValue usingSpecularTexture = SerialValue_create_int("usingSpecularTexture", material->usingSpecularTexture);
     SerialValue usingNormalTexture = SerialValue_create_int("usingNormalTexture", material->usingNormalTexture);
-    SerialValue usingAOTexture = SerialValue_create_int("usingAOTTexture", material->usingAOTexture);
+    SerialValue usingAOTexture = SerialValue_create_int("usingAOTexture", material->usingAOTexture);
     SerialValue usingDisplacementTexture = SerialValue_create_int("usingDisplacementTexture", material->usingDisplacementTexture);
     SerialObject_AddSerialValue(&serialObject, &usingDiffuseTexture);
     SerialObject_AddSerialValue(&serialObject, &usingSpecularTexture);
@@ -242,9 +242,9 @@ Material Material_deserialize(SerialObject* serialObject) {
     SerialValue specularValueZ = SerialObject_GetByName(serialObject, "specularZ");
 
     SerialValue aoIntensity = SerialObject_GetByName(serialObject, "aoIntensity");
-    SerialValue shininessValue = SerialObject_GetByName(serialObject, "shininessValue");
-    SerialValue displacementIntensityValue = SerialObject_GetByName(serialObject, "displacementIntensityValue");
-    SerialValue reflectionIntensityValue = SerialObject_GetByName(serialObject, "reflectionIntensityValue");
+    SerialValue shininessValue = SerialObject_GetByName(serialObject, "shininess");
+    SerialValue displacementIntensityValue = SerialObject_GetByName(serialObject, "displacementIntensity");
+    SerialValue reflectionIntensityValue = SerialObject_GetByName(serialObject, "reflectionIntensity");
 
     SerialValue shaderSignatureValue = SerialObject_GetByName(serialObject, "shaderSignature");
 
@@ -282,7 +282,7 @@ Material Material_deserialize(SerialObject* serialObject) {
     mat.displacementIntensity = SerialValue_GetDoubleValue(&displacementIntensityValue);
     mat.reflectionIntensity = SerialValue_GetDoubleValue(&reflectionIntensityValue);
 
-    mat.shaderSignature = SerialValue_GetIntValue(&shaderSignatureValue);
+    mat.shaderSignature = SerialValue_GetUintValue(&shaderSignatureValue);
 
     return mat;
 }

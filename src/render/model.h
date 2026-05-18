@@ -13,6 +13,7 @@
 
 
 #define MAX_TEXTURES_PER_MODEL 16
+#include "material.h"
 
 typedef struct Model_t {
     Texture* texture_loaded;
@@ -28,7 +29,7 @@ typedef struct Model_t {
 unsigned int TextureFromFile(char* path, bool gamma, vec2s* size);
 unsigned int loadCubemap(char** faces, unsigned int nbFaces);
 Model Model_create(char* path, bool gamma);
-void Model_Draw(Model* model, Shader* shader);
+void Model_Draw(Model* model, Material** materials, unsigned int materialCount);
 void Model_load(Model* model, char* path);
 void Model_processNode(Model* model, struct aiNode* node, struct aiScene* scene);
 Mesh Model_processMesh(Model* model, struct aiMesh* mesh, struct aiScene* scene);

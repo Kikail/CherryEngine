@@ -4,7 +4,7 @@
 #include "mesh.h"
 
 #include <string.h>
-
+#include "material.h"
 
 Mesh Mesh_create(Vertex* vertices, unsigned int nbVertices, unsigned int* indices, unsigned int nbIndices, Texture* textures, unsigned int nbTextures) {
     Mesh mesh;
@@ -55,37 +55,8 @@ void Mesh_setup(Mesh* mesh) {
     glBindVertexArray(0); // Bonne pratique de délier
 }
 
-void Mesh_draw(Mesh* mesh, Shader* shader) {
-    unsigned int diffuseNr = 1;
-    unsigned int specularNr = 1;
-    unsigned int normalNr = 1;
-    unsigned int heightNr = 1;
-
-    /* ON SKIP LES TEXTURES
-    for (unsigned int i = 0; i < mesh->nbTextures; i++) {
-        glActiveTexture(GL_TEXTURE0 + i);
-        char number[64] = "";
-        char* name = mesh->textures[i].type;
-        if (strcmp(name,"texture_diffuse") == 0) {
-            sprintf(number, "%d", diffuseNr++);
-        }
-        else if (strcmp(name,"texture_specular") == 0) {
-            sprintf(number, "%d", specularNr++);
-        }
-        else if (strcmp(name,"texture_normal") == 0) {
-            sprintf(number, "%d", normalNr++);
-        }
-        else if (strcmp(name,"texture_height") == 0) {
-            sprintf(number, "%d", heightNr++);
-        }
-        char completeName[128];
-        strcpy(completeName, name);
-        strcat(completeName, number);
-        glUniform1i(glGetUniformLocation(shader->shaderID, completeName), i);
-        glBindTexture(GL_TEXTURE_2D, mesh->textures[i].id);
-    }
-    */
-
+void Mesh_draw(Mesh* mesh, Material* material) {
+    Material_sendToShader(material, material->shader);
     glBindVertexArray(mesh->VAO);
     glDrawElements(GL_TRIANGLES, mesh->nbIndices, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
