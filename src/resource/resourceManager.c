@@ -138,9 +138,11 @@ void ResourceManager_loadAllFilesFromDirectory(ResourceManager* resourceManager,
             case FILETYPE_NONE:     break;
         }
     }
-#ifdef DEBUG
-    ResourceManager_showResources(resourceManager);
-#endif
+    #ifdef DEBUG
+        ResourceManager_showResources(resourceManager);
+    #endif
+    // Creer une methode pour initialiser tout les materiaux
+    ResourceManager_initMaterials(resourceManager);
 }
 void ResourceManager_loadResource(ResourceManager* resourceManager, char* path, FileType filetype) {
     FILE* f = fopen(path, "r");
@@ -231,4 +233,15 @@ Material* ResourceManager_getMaterialBySignature(ResourceManager* resourceManage
     DEBUG_LOG("RESOURCE_MANAGER::ResourceManager_getMaterialBySignature failed to find material");
 #endif
     return NULL;
+}
+bool ResourceManager_initMaterials(ResourceManager* resourceManager) {
+    for (int i = 0; i < resourceManager->numMaterials; i++) {
+        if (!Material_loadTextures(&resourceManager->materials[i], resourceManager)) {
+            #ifdef DEBUG
+                  DEBUG_LOG("RESOURCE_MANAGER::ResourceManager_initMaterials failed to load material");
+            #endif
+            return false;
+        }
+    }
+    return true;
 }

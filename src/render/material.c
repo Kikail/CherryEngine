@@ -2,8 +2,12 @@
 // Created by killian on 4/2/26.
 //
 #include "material.h"
+#include "../resource/resourceManager.h"
+#include "utils/utils.h"
 
 Material Material_create(vec3s a, vec3s d, vec3s s, float shininess, float aoIntensity, float displacementIntensity, float reflectionIntensity, Shader* shader) {
+    Material mat;
+
     if (shader != NULL) {
         Shader_use(shader);
         Shader_setInt(shader, "material.diffuseTexture", 0);
@@ -11,9 +15,9 @@ Material Material_create(vec3s a, vec3s d, vec3s s, float shininess, float aoInt
         Shader_setInt(shader, "material.specularTexture", 2);
         Shader_setInt(shader, "material.aoTexture", 3);
         Shader_setInt(shader, "material.displacementTexture", 4);
+        mat.shaderSignature = SHADER_SIGNATURE_NULL;
     }
 
-    Material mat;
     mat.ambient = a;
     mat.diffuse = d;
     mat.specular = s;
@@ -93,7 +97,67 @@ Material Material_loadFromFile(char* path) {
     return Material_deserialize(&materialObject);
 }
 
-//bool Material_loadTextures(Material* material, ResourceManager* res);
+bool Material_loadTextures(Material* material, ResourceManager* res) {
+    if (material->usingDiffuseTexture) {
+        CherryTexture* tex = ResourceManager_getTextureBySignature(res, material->diffuseTextureSignature);
+        if (tex == NULL) {
+            #ifdef DEBUG
+                  DEBUG_LOG("MATERIAL::Material_loadTextures failed to load diffuse texture");
+            #endif
+            return false;
+        }
+        material->diffuseTexture = tex->id;
+    }
+    if (material->usingAOTexture) {
+        CherryTexture* tex = ResourceManager_getTextureBySignature(res, material->aoTextureSignature);
+        if (tex == NULL) {
+            #ifdef DEBUG
+                DEBUG_LOG("MATERIAL::Material_loadTextures failed to load ao texture");
+            #endif
+            return false;
+        }
+        material->aoTexture = tex->id;
+    }
+    if (material->usingDisplacementTexture) {
+        CherryTexture* tex = ResourceManager_getTextureBySignature(res, material->displacementTextureSignature);
+        if (tex == NULL) {
+            #ifdef DEBUG
+                DEBUG_LOG("MATERIAL::Material_loadTextures failed to load displacement texture");
+            #endif
+            return false;
+        }
+        material->displacementTexture = tex->id;
+    }
+    if (material->usingNormalTexture) {
+        CherryTexture* tex = ResourceManager_getTextureBySignature(res, material->normalTextureSignature);
+        if (tex == NULL) {
+            #ifdef DEBUG
+                DEBUG_LOG("MATERIAL::Material_loadTextures failed to load normal texture");
+            #endif
+            return false;
+        }
+        material->normalTexture = tex->id;
+    }
+    if (material->usingSpecularTexture) {
+        CherryTexture* tex = ResourceManager_getTextureBySignature(res, material->specularTextureSignature);
+        if (tex == NULL) {
+            #ifdef DEBUG
+                DEBUG_LOG("MATERIAL::Material_loadTextures failed to load specular texture");
+            #endif
+            return false;
+        }
+        material->specularTexture = tex->id;
+    }
+    // CHARGER LE SHADER
+    material->shader = ResourceManager_getShaderBySignature(res, material->shaderSignature);
+    if (material->shader == NULL) {
+        #ifdef DEBUG
+            DEBUG_LOG("MATERIAL::Material_loadTextures failed to load shader");
+        #endif
+        return false;
+    }
+    return true;
+}
 SerialObject Material_serialize(Material* material) {
     SerialObject serialObject = SerialObject_create("Material");
 
@@ -149,6 +213,9 @@ SerialObject Material_serialize(Material* material) {
     SerialObject_AddSerialValue(&serialObject, &displacementIntensityValue);
     SerialObject_AddSerialValue(&serialObject, &reflectionIntensityValue);
 
+    SerialValue shaderSignatureValue = SerialValue_create_uint("shaderSignature", material->shaderSignature);
+    SerialObject_AddSerialValue(&serialObject, &shaderSignatureValue);
+
     return serialObject;
 }
 Material Material_deserialize(SerialObject* serialObject) {
@@ -178,6 +245,8 @@ Material Material_deserialize(SerialObject* serialObject) {
     SerialValue shininessValue = SerialObject_GetByName(serialObject, "shininessValue");
     SerialValue displacementIntensityValue = SerialObject_GetByName(serialObject, "displacementIntensityValue");
     SerialValue reflectionIntensityValue = SerialObject_GetByName(serialObject, "reflectionIntensityValue");
+
+    SerialValue shaderSignatureValue = SerialObject_GetByName(serialObject, "shaderSignature");
 
     Material mat;
     mat.usingDiffuseTexture = SerialValue_GetIntValue(&usingDiffuseTexture);
@@ -212,6 +281,8 @@ Material Material_deserialize(SerialObject* serialObject) {
     mat.shininess = SerialValue_GetDoubleValue(&shininessValue);
     mat.displacementIntensity = SerialValue_GetDoubleValue(&displacementIntensityValue);
     mat.reflectionIntensity = SerialValue_GetDoubleValue(&reflectionIntensityValue);
+
+    mat.shaderSignature = SerialValue_GetIntValue(&shaderSignatureValue);
 
     return mat;
 }

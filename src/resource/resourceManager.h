@@ -60,4 +60,6 @@ Shader* ResourceManager_getShaderBySignature(ResourceManager* resourceManager, u
 Model* ResourceManager_getModelBySignature(ResourceManager* resourceManager, unsigned int signature);
 Material* ResourceManager_getMaterialBySignature(ResourceManager* resourceManager, unsigned int signature);
 
+bool ResourceManager_initMaterials(ResourceManager* resourceManager);
+
 #endif //CHERRYENGINE_RESOURCEMANAGER_H

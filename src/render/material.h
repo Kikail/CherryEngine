@@ -11,6 +11,9 @@
 #include "shader.h"
 #include "resource/metaData.h"
 
+#define SHADER_SIGNATURE_NULL 0
+
+typedef struct ResourceManager_t ResourceManager;
 
 typedef struct Material_t{
     bool usingDiffuseTexture;
@@ -33,6 +36,8 @@ typedef struct Material_t{
     float displacementIntensity;
     float reflectionIntensity;
 
+    Shader* shader; unsigned int shaderSignature;
+
     unsigned int signature;
 }Material;
 Material Material_create(vec3s a, vec3s d, vec3s s, float shininess, float aoIntensity, float displacementIntensity, float reflectionIntensity, Shader* shader);
@@ -43,7 +48,7 @@ void Material_attachAoTexture(Material *material, unsigned int aoTexture);
 void Material_attachDisplacementTexture(Material *material, unsigned int displacementTexture);
 void Material_sendToShader(Material* mat, Shader* shader);
 
-//bool Material_loadTextures(Material* material, ResourceManager* res);
+bool Material_loadTextures(Material* material, ResourceManager* res);
 Material Material_loadFromFile(char* path);
 SerialObject Material_serialize(Material* material);
 Material Material_deserialize(SerialObject* serialObject);
