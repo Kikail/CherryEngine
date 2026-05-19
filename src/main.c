@@ -32,6 +32,9 @@ vec3s lightPos = {1.5, 1.5, 1.5};
 // -CREER UNR FONCTION START POUR TOUT LES COMPONENTS POUR INITIALISER ( IE: CHARGER LE MODELE DANS MESHRENDERER ET SHADER )
 // GROSSE UPDATE A FAIRE : empecher les fuites memoire
 
+// BUG A TROUVER, PK DES FOIS CRASH ET PK DES FOIS NON
+// PEUT ETRE CHARGEMENT DANS MESHRENDERER
+
 // ==========================================
 // MAIN
 // ==========================================
@@ -65,11 +68,13 @@ int main(int argc, char** argv)
     ////////////////////////////////////////////////////
     ///     Chargement de la scene
     ////////////////////////////////////////////////////
+
     FILE* f = fopen("/home/killian/Projects/C/CherryEngine/resources/scenes/test.csn", "r");
     SerialObject serialObject = SerialObject_DeserializeSingle(f);
     fclose(f);
     SerialObject_Print(&serialObject);
     Scene* scene = Scene_deserialize(&serialObject, game->componentPool);
+    Scene_initScene(scene, &componentPool, deltaTime, game);
 
     float timeCheck = 0.0f;
     int nbFrames = 0;
@@ -129,6 +134,7 @@ int main(int argc, char** argv)
     SerialObject_Print(&sceneObj);
     FileSaver* fileSaver = FileSaver_create("/home/killian/Projects/C/CherryEngine/resources/scenes/test.csn", SerialObject_Serialize(&sceneObj));
     FileSaver_save(fileSaver);
+
 
     cleanup(Game_getWindow(game));
     return EXIT_SUCCESS;

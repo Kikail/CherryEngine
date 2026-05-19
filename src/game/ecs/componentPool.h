@@ -37,6 +37,7 @@ bool ComponentPool_CheckSpace(ComponentPool* componentPool, ComponentType compon
 bool ComponentPool_CreateComponent(ComponentPool* componentPool, ComponentType componentType, Component* component);
 void* ComponentPool_GetComponent(ComponentPool* componentPool, ComponentType componentType, uint32 index);
 void ComponentPool_UpdateComponent(ComponentPool* componentPool, ComponentType componentType, void* component, GameObject* gameObject, float deltaTime, Game* game);
+void ComponentPool_InitComponent(ComponentPool* componentPool, ComponentType componentType, void* component, GameObject* gameObject, float deltaTime, Game* game);
 
 SerialObject ComponentPool_serializeComponent(ComponentPool* componentPool, ComponentType componentType, uint32 index);
 void ComponentPool_deserialize(ComponentPool* componentPool, ComponentType componentType, SerialObject* serialObject);

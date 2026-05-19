@@ -125,6 +125,30 @@ void ComponentPool_UpdateComponent(ComponentPool* componentPool, ComponentType c
             break;
     }
 }
+void ComponentPool_InitComponent(ComponentPool* componentPool, ComponentType componentType, void* component, GameObject* gameObject, float deltaTime, Game* game) {
+    if(component == NULL){
+#ifdef DEBUG
+        DEBUG_LOG("ComponentPool_InitComponent::Component is NULL");
+#endif
+        return;
+    }
+
+    switch (componentType)
+    {
+        case COMPONENT_TRANSFORM:
+            // Pas de Update pour Transform
+            break;
+        case COMPONENT_PLAYER_CONTROLLER:
+            //Component_PlayerController_Init(component, gameObject, deltaTime);
+            break;
+        case COMPONENT_SPRITE_RENDERER:
+            //Component_SpriteRenderer_Init(component, gameObject, game);
+            break;
+        case COMPONENT_MESH_RENDERER:
+            Component_MeshRenderer_Init(component, gameObject, game);
+            break;
+    }
+}
 
 SerialObject ComponentPool_serializeComponent(ComponentPool* componentPool, ComponentType componentType, uint32 index) {
     switch (componentType)

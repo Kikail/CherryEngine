@@ -5,45 +5,46 @@
 #include "../../scene/gameObject.h"
 #include "transform.h"
 #include "meshRenderer.h"
-
-void Component_MeshRenderer_Update(MeshRenderer* meshRenderer, GameObject* gameObject, Game* game) {
+void Component_MeshRenderer_Init(MeshRenderer* meshRenderer, GameObject* gameObject, Game* game) {
     if (meshRenderer->model == NULL) {
         #ifdef DEBUG
-            DEBUG_LOG("MESHRENDERER::Component_MeshRenderer_Update model is null trying to load");
+                DEBUG_LOG("MESHRENDERER::Component_MeshRenderer_Init model is null trying to load");
         #endif
         Model* model = ResourceManager_getModelBySignature(Game_getResourceManager(game), meshRenderer->modelSignature);
         if (model == NULL) {
             #ifdef DEBUG
-                DEBUG_LOG("MESHRENDERER::Component_MeshRenderer_Update model is null failed to load");
+                        DEBUG_LOG("MESHRENDERER::Component_MeshRenderer_Init model is null failed to load");
             #endif
             return;
         }
         else {
             #ifdef DEBUG
-                        DEBUG_LOG("MESHRENDERER::Component_MeshRenderer_Update model loaded successfully");
+                        DEBUG_LOG("MESHRENDERER::Component_MeshRenderer_Init model loaded successfully");
             #endif
             meshRenderer->model = model;
         }
     }
     if (meshRenderer->materialsLoaded < meshRenderer->materialCount) {
         #ifdef DEBUG
-                DEBUG_LOG("MESHRENDERER::Component_MeshRenderer_Update all materials are not loaded");
+                DEBUG_LOG("MESHRENDERER::Component_MeshRenderer_Init all materials are not loaded");
         #endif
         for (int i = 0;i < meshRenderer->materialCount;i++) {
             Material* material = ResourceManager_getMaterialBySignature(game->resourceManager, meshRenderer->materialSignatures[i]);
             if (material == NULL) {
                 #ifdef DEBUG
-                    DEBUG_LOG("MESHRENDERER::Component_MeshRenderer_Update failed to load material");
+                                DEBUG_LOG("MESHRENDERER::Component_MeshRenderer_Init failed to load material");
                 #endif
                 return;
             }
             meshRenderer->material[i] = material;
             meshRenderer->materialsLoaded += 1;
             #ifdef DEBUG
-                DEBUG_LOG("MESHRENDERER::Component_MeshRenderer_Update materials loaded successfully");
+                        DEBUG_LOG("MESHRENDERER::Component_MeshRenderer_Init materials loaded successfully");
             #endif
         }
     }
+}
+void Component_MeshRenderer_Update(MeshRenderer* meshRenderer, GameObject* gameObject, Game* game) {
     if (meshRenderer->model != NULL && meshRenderer->materialsLoaded == meshRenderer->materialCount) {
         Transform* transform = GameObject_GetComponent(gameObject, game->componentPool, COMPONENT_TRANSFORM);
         if (transform == NULL) {

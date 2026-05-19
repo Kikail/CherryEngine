@@ -20,6 +20,7 @@ Scene* Scene_create(char* name);
 Scene* Scene_deserialize(SerialObject* sceneObject, ComponentPool* componentPool);
 GameObject* Scene_addGameObject(Scene* scene, char* objectName);
 GameObject* Scene_getGameObject(Scene* scene, unsigned int id);
+void Scene_initScene(Scene* scene, ComponentPool* componentPoool, float deltaTime, Game* game);
 void Scene_updateScene(Scene* scene, ComponentPool* componentPoool, float deltaTime, Game* game);
 SerialObject Scene_serialize(Scene* scene, ComponentPool* componentPool);
 

@@ -96,3 +96,12 @@ void GameObject_updateComponents(GameObject* gameObject, ComponentPool* componen
         ComponentPool_UpdateComponent(componentPool, gameObject->components[i].component_type, GameObject_GetComponent(gameObject, componentPool, gameObject->components[i].component_type), gameObject, deltaTime, game);
     }
 }
+void GameObject_initComponents(GameObject* gameObject, ComponentPool* componentPool, float deltaTime, Game* game) {
+    #ifdef DEBUG
+        if (gameObject == NULL || componentPool == NULL)
+            DEBUG_LOG("GAMEOBJECT::GameObject_initComponents gameObject or componentPool is NULL");
+    #endif
+    for(int i = 0; i < gameObject->componentCount; i++){
+        ComponentPool_InitComponent(componentPool, gameObject->components[i].component_type, GameObject_GetComponent(gameObject, componentPool, gameObject->components[i].component_type), gameObject, deltaTime, game);
+    }
+}

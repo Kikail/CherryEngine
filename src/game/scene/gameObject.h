@@ -33,5 +33,6 @@ bool GameObject_AddComponentWithoutAddingComponentPool(GameObject* gameObject, C
 bool GameObject_HasComponent(GameObject* gameObject, ComponentType componentType);
 void* GameObject_GetComponent(GameObject* gameObject, ComponentPool* componentPool, ComponentType componentType);
 void GameObject_updateComponents(GameObject* gameObject, ComponentPool* componentPool, float deltaTime, Game* game);
+void GameObject_initComponents(GameObject* gameObject, ComponentPool* componentPool, float deltaTime, Game* game);
 
 #endif //CHERRYENGINE_GAMEOBJECT_H

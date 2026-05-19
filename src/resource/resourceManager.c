@@ -16,6 +16,8 @@ ResourceManager* ResourceManager_create() {
     resourceManager->numModels = 0;
     resourceManager->numShaders = 0;
     resourceManager->numTextures = 0;
+    resourceManager->numMaterials = 0;
+    resourceManager->numResources = 0;
 
     return resourceManager;
 }
@@ -117,6 +119,10 @@ Model* ResourceManager_loadModel(ResourceManager* resourceManager, MetaData* met
 void ResourceManager_loadAllFilesFromDirectory(ResourceManager* resourceManager, char* directory) {
     // Ici on charge tout les fichiers depuis directory
     FilePicker* filePicker = FilePicker_loadFiles(directory);
+
+    CherryFile* metaDataFilesTarget = malloc(sizeof(CherryFile) * RESOURCE_MAX_TEXTURES + RESOURCE_MAX_SHADERS + RESOURCE_MAX_MODELS + RESOURCE_MAX_MATERIALS);
+    unsigned int metaDataFilesTargetCount = 0;
+
     for (int i = 0; i < filePicker->numFiles; i++) {
         CherryFile file = filePicker->files[i];
 
@@ -134,7 +140,8 @@ void ResourceManager_loadAllFilesFromDirectory(ResourceManager* resourceManager,
             case FILETYPE_VS:       MetaData_check(file.path, file.path, file.type);break;
             case FILETYPE_OBJ:      MetaData_check(file.path, file.path, file.type);break;
             case FILETYPE_MATERIAL: MetaData_check(file.path, file.path, file.type);break;
-            case FILETYPE_METADATA: ResourceManager_loadResource(resourceManager, file.path, file.type);break;
+            case FILETYPE_METADATA:
+                ResourceManager_loadResource(resourceManager, file.path, file.type);break;
             case FILETYPE_NONE:     break;
         }
     }
@@ -143,6 +150,8 @@ void ResourceManager_loadAllFilesFromDirectory(ResourceManager* resourceManager,
     #endif
     // Creer une methode pour initialiser tout les materiaux
     ResourceManager_initMaterials(resourceManager);
+
+    free(metaDataFilesTarget);
 }
 void ResourceManager_loadResource(ResourceManager* resourceManager, char* path, FileType filetype) {
     FILE* f = fopen(path, "r");

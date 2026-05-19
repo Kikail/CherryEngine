@@ -43,6 +43,11 @@ GameObject* Scene_addGameObject(Scene* scene, char* objectName) {
     scene->numGameObjects++;
     return &scene->gameObjects[scene->numGameObjects - 1];
 }
+void Scene_initScene(Scene* scene, ComponentPool* componentPoool, float deltaTime, Game* game) {
+    for (uint32 i = 0; i < scene->numGameObjects; i++) {
+        GameObject_initComponents(&scene->gameObjects[i], componentPoool, deltaTime,game);
+    }
+}
 void Scene_updateScene(Scene* scene, ComponentPool* componentPoool, float deltaTime, Game* game) {
     for (uint32 i = 0; i < scene->numGameObjects; i++) {
         GameObject_updateComponents(&scene->gameObjects[i], componentPoool, deltaTime,game);

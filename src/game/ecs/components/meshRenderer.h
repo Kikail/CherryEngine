@@ -23,7 +23,7 @@ typedef struct {
     Material* material[MESHRENDERER_MAX_MATERIALS]; unsigned int materialCount; unsigned int materialSignatures[MESHRENDERER_MAX_MATERIALS];
     unsigned int materialsLoaded;
 } MeshRenderer;
-
+void Component_MeshRenderer_Init(MeshRenderer* meshRenderer, GameObject* gameObject, Game* game);
 void Component_MeshRenderer_Update(MeshRenderer* meshRenderer, GameObject* gameObject, Game* game);
 SerialObject MeshRenderer_serialize(MeshRenderer* meshRenderer);
 void MeshRenderer_deserialize(MeshRenderer* meshRenderer, SerialObject* serialObject);

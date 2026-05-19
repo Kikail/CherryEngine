@@ -102,7 +102,8 @@ bool Material_loadTextures(Material* material, ResourceManager* res) {
         CherryTexture* tex = ResourceManager_getTextureBySignature(res, material->diffuseTextureSignature);
         if (tex == NULL) {
             #ifdef DEBUG
-                  DEBUG_LOG("MATERIAL::Material_loadTextures failed to load diffuse texture");
+                  DEBUG_LOG_LINE("MATERIAL::Material_loadTextures failed to load diffuse texture");
+                  printf(" %u\n",material->diffuseTextureSignature);
             #endif
             return false;
         }
