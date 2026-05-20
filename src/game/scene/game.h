@@ -13,6 +13,7 @@
 #include "render/camera.h"
 
 typedef struct ComponentPool_t ComponentPool;
+typedef struct Scene_t Scene;
 
 /**
  * \brief Une structure de donnee regroupant toutes les infos utiles pour les components
@@ -26,6 +27,7 @@ typedef struct Game_t {
     mat4s perspective;
     mat4s view;
     Input* input;
+    Scene* currentScene;
     float currentFrame;
 }Game;
 Game* Game_init();

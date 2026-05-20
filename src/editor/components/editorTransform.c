@@ -20,7 +20,8 @@ void Editor_Transform_RenderTab(Editor* editor, Transform* transform) {
         transform->isDirty = true;
     }
 
-    if (igDragFloat3("Rotation", (float*)&transform->rotation, 1.0f, 0.0f, 0.0f, "%.3f", 0)) {
+    if (igDragFloat4("Rotation (Quat)", (float*)&transform->rotation, 0.05f, -1.0f, 1.0f, "%.3f", 0)) {
+        transform->rotation = glms_quat_normalize(transform->rotation); // Obligatoire !
         transform->isDirty = true;
     }
 

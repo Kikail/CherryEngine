@@ -26,6 +26,8 @@ extern void ImGui_ImplOpenGL3_Shutdown(void);
 typedef struct Editor_t {
     GameObject* selectedObjet;
 }Editor;
+
+void Editor_renderComponentsTab(Editor* editor, Game* game);
 void Editor_render(Editor* editor, Game* game);
 
 

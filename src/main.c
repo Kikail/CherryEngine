@@ -81,6 +81,7 @@ int main(int argc, char** argv)
     SerialObject_Print(&serialObject);
     Scene* scene = Scene_deserialize(&serialObject, game->componentPool);
     Scene_initScene(scene, &componentPool, deltaTime, game);
+    game->currentScene = scene;
 
     ////////////////////////////////////////////////////
     ///     Creation de l'editeur
