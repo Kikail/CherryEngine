@@ -120,6 +120,10 @@ add_executable(CherryEngine
         src/resource/metaData.h
         src/resource/metaData.c
         src/render/texture.h
+        src/editor/editor.h
+        src/editor/editor.c
+        src/editor/components/editorTransform.h
+        src/editor/components/editorTransform.c
 )
 
 # 3. MODIFICATION : Configuration de l'inclusion des headers pour cimgui et ses backends

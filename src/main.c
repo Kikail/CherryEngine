@@ -25,26 +25,13 @@
 #include "resource/fileSaver.h"
 #include "resource/serializer.h"
 
-#define CIMGUI_DEFINE_ENUMS_AND_STRUCTS
-#include "../external/cimgui/cimgui.h"
-#include <cimgui_impl.h> // Souvent, cimgui fournit un header englobant pour les backends C
-// Déclarations explicites pour lier le C aux backends C++ d'ImGui
-extern bool ImGui_ImplGlfw_InitForOpenGL(GLFWwindow* window, bool install_callbacks);
-extern void ImGui_ImplGlfw_NewFrame(void);
-extern void ImGui_ImplGlfw_Shutdown(void);
-extern bool ImGui_ImplOpenGL3_Init(const char* glsl_version);
-extern void ImGui_ImplOpenGL3_NewFrame(void);
-extern void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData* draw_data);
-extern void ImGui_ImplOpenGL3_Shutdown(void);
+#include "editor/editor.h"
 
 vec3s lightPos = {1.5, 1.5, 1.5};
 
 // PROCHAINE ETAPE :
-// -CREER UNR FONCTION START POUR TOUT LES COMPONENTS POUR INITIALISER ( IE: CHARGER LE MODELE DANS MESHRENDERER ET SHADER )
 // GROSSE UPDATE A FAIRE : empecher les fuites memoire
-
-// BUG A TROUVER, PK DES FOIS CRASH ET PK DES FOIS NON
-// PEUT ETRE CHARGEMENT DANS MESHRENDERER
+// Ajout d'un editeur
 
 // ==========================================
 // MAIN
@@ -57,7 +44,9 @@ int main(int argc, char** argv)
     Game* game = Game_init();
     glEnable(GL_DEPTH_TEST);
 
-    // Initialisation de ImGui
+    ////////////////////////////////////////////////////
+    ///     Initialisation de ImGui
+    ////////////////////////////////////////////////////
     ImGuiContext* ctx = igCreateContext(NULL);
     ImGuiIO* io = igGetIO_ContextPtr(ctx);
     ImGui_ImplGlfw_InitForOpenGL(game->window, true);
@@ -93,6 +82,12 @@ int main(int argc, char** argv)
     Scene* scene = Scene_deserialize(&serialObject, game->componentPool);
     Scene_initScene(scene, &componentPool, deltaTime, game);
 
+    ////////////////////////////////////////////////////
+    ///     Creation de l'editeur
+    ////////////////////////////////////////////////////
+    Editor editor;
+    editor.selectedObjet = &scene->gameObjects[0];
+
     float timeCheck = 0.0f;
     int nbFrames = 0;
 
@@ -124,20 +119,14 @@ int main(int argc, char** argv)
         // Update du jeu comprenenant la physique et les input
         glfwPollEvents();
 
-        // 2. Préparation de la frame ImGui
+        // Nouvelle frame Imgui
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         igNewFrame();
 
-        // 3. Dessin de ton interface
-        // (Tout ce qui est ici sera dessiné par-dessus ton jeu)
-        igBegin("Debug CherryEngine", NULL, 0);
-        igText("Application simple en C");
-        if (igButton("Action !", (ImVec2){100, 30})) {
-            printf("Bouton cliqué !\n");
-        }
-        igEnd();
+        Editor_render(&editor, game);
 
+        // Update du jeu
         Game_update(game, deltaTime);
 
         // NOUVEAU : Calcul mathématique de la Caméra Orbitale
@@ -150,15 +139,14 @@ int main(int argc, char** argv)
         mat4s view = glms_lookat(camPos, target, up);
         game->view = view;
 
-        // Update de la scene actuelle
+        // Update de la scene actuelle, L'affichage de la scene se passe ici
         Scene_updateScene(scene, game->componentPool, deltaTime, game);
 
         // On augmente le nombre de frame verifiee
         timeCheck += deltaTime;
         nbFrames++;
 
-        // 5. RENDU DE L'INTERFACE IMGUI
-        // C'est ici que la magie opère : ImGui génère ses propres commandes de dessin
+        // Rendu ImGui sur la fenetre
         igRender();
         ImGui_ImplOpenGL3_RenderDrawData(igGetDrawData());
 
