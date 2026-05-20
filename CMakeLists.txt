@@ -1,10 +1,13 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(CherryEngine C)
+# 1. MODIFICATION : Ajout de 'CXX' pour supporter la compilation C++ de ImGui
+project(CherryEngine C CXX)
 
-# Standards C
+# Standards C et C++
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # =====================================================
 # RESOURCES PATH
@@ -27,6 +30,9 @@ set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(glfw)
 
+# cimgui (La librairie compile le noyau ImGui et le wrapper C)
+add_subdirectory(external/cimgui)
+
 # CGLM (Maths library)
 FetchContent_Declare(
         cglm
@@ -35,9 +41,8 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(cglm)
 
-# OpenGL
+# OpenGL & Assimp
 find_package(OpenGL REQUIRED)
-
 find_package(assimp REQUIRED)
 
 # =====================================================
@@ -50,6 +55,11 @@ target_include_directories(glad PUBLIC external)
 # MAIN EXECUTABLE
 # =====================================================
 add_executable(CherryEngine
+        # 2. MODIFICATION : Ajout des backends GLFW et OpenGL3 d'ImGui
+        external/cimgui/imgui/backends/imgui_impl_glfw.cpp
+        external/cimgui/imgui/backends/imgui_impl_opengl3.cpp
+
+        # --- Tes fichiers sources d'origine ---
         src/main.c
         src/utils/utils.h
         src/game/ecs/componentPool.c
@@ -112,8 +122,13 @@ add_executable(CherryEngine
         src/render/texture.h
 )
 
-# Configuration de l'inclusion des headers
-target_include_directories(CherryEngine PRIVATE src)
+# 3. MODIFICATION : Configuration de l'inclusion des headers pour cimgui et ses backends
+target_include_directories(CherryEngine PRIVATE
+        src
+        external/cimgui
+        external/cimgui/imgui
+        external/cimgui/imgui/backends
+)
 
 # Optionnel : Permet d'utiliser les structs dans cglm (ex: vec.x au lieu de vec[0])
 target_compile_definitions(CherryEngine PRIVATE CGLM_USE_STRUCTS)
@@ -126,6 +141,7 @@ target_link_libraries(CherryEngine
         glfw
         glad
         cglm
+        cimgui            # 4. MODIFICATION : On lie cimgui au projet
         OpenGL::GL
         assimp::assimp
         ${CMAKE_DL_LIBS}

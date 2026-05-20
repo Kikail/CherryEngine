@@ -25,6 +25,17 @@
 #include "resource/fileSaver.h"
 #include "resource/serializer.h"
 
+#define CIMGUI_DEFINE_ENUMS_AND_STRUCTS
+#include "../external/cimgui/cimgui.h"
+#include <cimgui_impl.h> // Souvent, cimgui fournit un header englobant pour les backends C
+// Déclarations explicites pour lier le C aux backends C++ d'ImGui
+extern bool ImGui_ImplGlfw_InitForOpenGL(GLFWwindow* window, bool install_callbacks);
+extern void ImGui_ImplGlfw_NewFrame(void);
+extern void ImGui_ImplGlfw_Shutdown(void);
+extern bool ImGui_ImplOpenGL3_Init(const char* glsl_version);
+extern void ImGui_ImplOpenGL3_NewFrame(void);
+extern void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData* draw_data);
+extern void ImGui_ImplOpenGL3_Shutdown(void);
 
 vec3s lightPos = {1.5, 1.5, 1.5};
 
@@ -45,6 +56,12 @@ int main(int argc, char** argv)
     ////////////////////////////////////////////////////
     Game* game = Game_init();
     glEnable(GL_DEPTH_TEST);
+
+    // Initialisation de ImGui
+    ImGuiContext* ctx = igCreateContext(NULL);
+    ImGuiIO* io = igGetIO_ContextPtr(ctx);
+    ImGui_ImplGlfw_InitForOpenGL(game->window, true);
+    ImGui_ImplOpenGL3_Init("#version 330");
 
     ////////////////////////////////////////////////////
     ///     Testing des scenes
@@ -106,6 +123,21 @@ int main(int argc, char** argv)
 
         // Update du jeu comprenenant la physique et les input
         glfwPollEvents();
+
+        // 2. Préparation de la frame ImGui
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        igNewFrame();
+
+        // 3. Dessin de ton interface
+        // (Tout ce qui est ici sera dessiné par-dessus ton jeu)
+        igBegin("Debug CherryEngine", NULL, 0);
+        igText("Application simple en C");
+        if (igButton("Action !", (ImVec2){100, 30})) {
+            printf("Bouton cliqué !\n");
+        }
+        igEnd();
+
         Game_update(game, deltaTime);
 
         // NOUVEAU : Calcul mathématique de la Caméra Orbitale
@@ -124,6 +156,11 @@ int main(int argc, char** argv)
         // On augmente le nombre de frame verifiee
         timeCheck += deltaTime;
         nbFrames++;
+
+        // 5. RENDU DE L'INTERFACE IMGUI
+        // C'est ici que la magie opère : ImGui génère ses propres commandes de dessin
+        igRender();
+        ImGui_ImplOpenGL3_RenderDrawData(igGetDrawData());
 
         // Affichage graphique
         glfwSwapBuffers(Game_getWindow(game));

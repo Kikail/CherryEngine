@@ -49,6 +49,7 @@ void Component_MeshRenderer_Update(MeshRenderer* meshRenderer, GameObject* gameO
         Transform* transform = GameObject_GetComponent(gameObject, game->componentPool, COMPONENT_TRANSFORM);
         if (transform == NULL) {
             DEBUG_LOG("MESHRENDERER::Component_MeshRenderer_Update transform is null");
+            return;
         }
 
         mat4s model = Transform_getWorldMatrix(transform);
