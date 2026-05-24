@@ -149,6 +149,8 @@ void Model_processNode(Model* model, struct aiNode* node, struct aiScene* scene)
 Mesh Model_processMesh(Model* model, struct aiMesh* mesh, struct aiScene* scene) {
     Vertex* vertices = malloc(sizeof(Vertex) * mesh->mNumVertices);
 
+
+
     for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
         Vertex vertex;
         vertex.position = (vec3s){mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z};

@@ -27,6 +27,70 @@ void Editor_renderHierarchy(Editor* editor, Scene* scene) {
     igEnd();
 }
 
+void Editor_renderFileExplorer(Editor* editor, Game* game) {
+    igBegin("File Explorer", NULL, 0);
+
+    float cellSize = 64.0f;
+    float panelWidth = igGetContentRegionAvail().x;
+    int columnCount = (int)(panelWidth / cellSize);
+    if (columnCount < 1) columnCount = 1;
+
+    for (int i = 0; i < game->resourceManager->numResources; i++) {
+        CherryResource* resource = &game->resourceManager->resources[i];
+        igPushID_Int(i);
+
+        // 1. Récupérer l'ID OpenGL de la texture depuis ton manager
+        // Assure-toi que cette fonction existe dans ton manager
+        GLuint textureID;
+        switch (resource->type) {
+            case CHERRY_RESOURCE_TYPE_MATERIAL:
+                textureID = ResourceManager_getTextureBySignature(game->resourceManager, 2936160603)->id;
+                break;
+            case CHERRY_RESOURCE_TYPE_MODEL:
+                textureID = ResourceManager_getTextureBySignature(game->resourceManager, 2699999743)->id;
+                break;
+            case CHERRY_RESOURCE_TYPE_TEXTURE:
+                textureID = ResourceManager_getTextureBySignature(game->resourceManager, 3749278416)->id;
+                break;
+            case CHERRY_RESOURCE_TYPE_SHADER:
+                textureID = ResourceManager_getTextureBySignature(game->resourceManager, 938667242)->id;
+                break;
+            default:
+                textureID = ResourceManager_getTextureBySignature(game->resourceManager, 1668917297)->id;
+                break;
+
+        }
+
+        // 2. Création du bouton avec image
+        // Les coordonnées UV (0,1) sont standards pour OpenGL
+        ImVec2 size = {cellSize, cellSize};
+        ImVec2 uv0 = {0, 0}; // Haut-gauche
+        ImVec2 uv1 = {1, 1}; // Bas-droite (inversé car OpenGL Y est vers le haut)
+
+        // Note : igImageButton accepte un pointeur vers l'ID de texture
+        ImTextureRef* ref = ImTextureRef_ImTextureRef_TextureID(textureID);
+        if (igImageButton("file_icon", *ref, size, uv0, uv1,
+                         (ImVec4){0,0,0,0}, (ImVec4){1,1,1,1})) {
+            editor->selectedResource = resource;
+                         }
+
+        // 3. Tooltip
+        if (igIsItemHovered(0)) {
+            igBeginTooltip();
+            igText("Signature: %u", resource->signature);
+            igText("Path: %s", resource->path);
+            igEndTooltip();
+        }
+
+        if ((i + 1) % columnCount != 0) {
+            igSameLine(0.0f, 10.0f);
+        }
+
+        igPopID();
+    }
+    igEnd();
+}
+
 void Editor_renderUtils(Editor* editor, Game* game) {
     igBegin("Utils", NULL, 0);
 
@@ -60,6 +124,7 @@ void Editor_render(Editor* editor, Game* game) {
     Editor_renderComponentsTab(editor, game);
     Editor_renderHierarchy(editor, game->currentScene);
     Editor_renderUtils(editor, game);
+    Editor_renderFileExplorer(editor, game);
 }
 
 void Editor_renderMeshRenderer(Editor* editor, MeshRenderer* renderer, Game* game) {

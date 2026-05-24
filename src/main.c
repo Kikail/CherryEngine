@@ -32,6 +32,8 @@ vec3s lightPos = {1.5, 1.5, 1.5};
 // PROCHAINE ETAPE :
 // GROSSE UPDATE A FAIRE : empecher les fuites memoire
 // Ajout d'un editeur
+// Charger les materiaux avec assimp pour creer un meshRenderer avec le bon nombre de materiaux et pas le faire a la main
+// Creer un fileExplorer pour voir toutes les ressources chargees
 
 // ==========================================
 // MAIN
